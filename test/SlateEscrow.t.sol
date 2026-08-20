@@ -196,6 +196,17 @@ contract SlateEscrowTest is Test {
 
     // --- circuit encoding ---------------------------------------------------
 
+    /// Pinned vector, asserted identically by the SDK's `addressToFieldPair`.
+    /// The two encoders have to agree exactly: if they drift, proofs get built
+    /// against one packing and checked against the other, and settlement fails
+    /// with an address mismatch that points at neither side.
+    function test_signalAddress_matchesSdkVector() public pure {
+        (uint256 hi, uint256 lo) =
+            SignalAddress.toFieldPair(0xdEADbeEF00000000000000000000000000000001);
+        assertEq(hi, 0xdeadbeef, "hi = top 16 bytes");
+        assertEq(lo, 1, "lo = bottom 16 bytes");
+    }
+
     /// A left-padded EVM address must split into the same (hi, lo) pair the
     /// circuit binds: hi = first 16 bytes, lo = last 16 bytes, big-endian.
     function testFuzz_signalAddress_roundTrips(address addr) public pure {
