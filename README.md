@@ -14,7 +14,9 @@ Usage volume and pricing never go on-chain.
 |---|---|
 | `src/Verifier.sol` | **Generated** — `snarkjs zkey export solidityverifier`. Do not hand-edit. |
 | `src/SlateEscrow.sol` | Escrow: deposit → verify proof → check nullifier → pay out. |
+| `src/SlateAgentRegistry.sol` | Pinned channel terms, checked at settlement. |
 | `src/SignalAddress.sol` | Encodes an EVM address into the circuit's hi/lo field pair. |
+| `sdk/` | TypeScript client, Foundry ABIs, and the read path. |
 
 ## Regenerating the verifier
 
@@ -42,11 +44,35 @@ Build proof calldata with `snarkjs.groth16.exportSolidityCallData` — it
 already emits the G2 c1/c0 ordering this verifier expects. Do not hand-pack
 it.
 
+## Local anvil
+
+Partial end-to-end: deploy, open a channel, exercise the read path. It does not
+prove a real settlement — that is the full loop.
+
+The SDK e2e (`cd sdk && pnpm test:e2e`) spawns its own anvil. To poke at a
+node by hand instead:
+
+```sh
+anvil
+forge script script/DeployLocal.s.sol:DeployLocal --rpc-url http://127.0.0.1:8545 \
+  --broadcast --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+```
+
+`DeployLocal` mints mock USDC to the deployer and whitelists it.
+
+## TypeScript SDK
+
+`sdk/` talks to these contracts over `viem`. ABIs are generated from
+`forge inspect` (`pnpm generate:abi` in `sdk/`). Regenerating is required
+whenever a contract's ABI changes — `sdk` tests compare the committed files
+to a fresh inspect.
+
 ## Develop
 
 ```sh
 forge build
 forge test
+cd sdk && pnpm test && pnpm test:e2e
 ```
 
 `forge lint` reports naming warnings on `src/Verifier.sol`; it is codegen,
