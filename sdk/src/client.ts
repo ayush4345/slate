@@ -10,7 +10,7 @@ import {
   type WalletClient,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { base, baseSepolia } from "viem/chains";
+import { base, baseSepolia, foundry } from "viem/chains";
 
 import { erc20Abi, escrowAbi, registryAbi } from "./abi.js";
 import { addressToFieldPair, SIGNAL, type Settlement } from "./settlement.js";
@@ -248,7 +248,7 @@ export class SlateClient {
 }
 
 /** Chains this client is configured for. */
-export const CHAINS = { base, baseSepolia } as const;
+export const CHAINS = { base, baseSepolia, foundry } as const;
 
 /** Build a signing account from a `0x…` private key. */
 export function accountFromPrivateKey(privateKey: string): Account {

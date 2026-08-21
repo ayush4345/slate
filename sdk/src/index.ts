@@ -5,4 +5,5 @@
 
 export * from "./settlement.js";
 export * from "./client.js";
-export { erc20Abi, escrowAbi, registryAbi } from "./abi.js";
+export * from "./reads.js";
+export { erc20Abi, escrowAbi, registryAbi, verifierAbi } from "./abi.js";
