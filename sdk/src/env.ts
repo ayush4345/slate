@@ -1,7 +1,7 @@
 import { getAddress, type Address, type Chain } from "viem";
-import { base, baseSepolia, foundry } from "viem/chains";
+import { baseSepolia } from "viem/chains";
 
-import { accountFromPrivateKey, SlateClient, SlateClientError } from "./client.js";
+import { accountFromPrivateKey, CHAINS, SlateClient, SlateClientError } from "./client.js";
 
 /** A configured client plus the addresses it binds into every proof. */
 export interface SlateEnvSetup {
@@ -17,15 +17,15 @@ export interface SlateEnvSetup {
   label: string;
 }
 
-/** Chains settlement can run against, by id. */
-const CHAINS_BY_ID = new Map<number, Chain>([
-  [base.id, base],
-  [baseSepolia.id, baseSepolia],
-  [foundry.id, foundry], // local anvil
-]);
+/** Chains settlement can run against, keyed by id. Follows `CHAINS`, so a chain
+ *  added there is selectable here without a second edit. */
+const CHAINS_BY_ID = new Map<number, Chain>(
+  Object.values(CHAINS).map((chain) => [chain.id, chain]),
+);
 
+/** Anvil advertises no public RPC of its own. */
 const DEFAULT_RPC_URLS: Record<number, string> = {
-  [foundry.id]: "http://127.0.0.1:8545",
+  31337: "http://127.0.0.1:8545",
 };
 
 function required(env: NodeJS.ProcessEnv, name: string): string {

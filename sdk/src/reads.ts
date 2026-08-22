@@ -13,8 +13,8 @@ function asSignals13(signals: PublicSignals): Signals13 {
 }
 
 /**
- * Read-only view of a deployed settlement stack. Twin of the old
- * `soroban.ts` helpers — the names are the same so call sites port 1:1.
+ * Read-only view of a deployed settlement stack. Every call an agent needs to
+ * inspect a channel without sending a transaction.
  */
 export interface ReadsConfig {
   publicClient: PublicClient;
