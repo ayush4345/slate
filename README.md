@@ -11,7 +11,7 @@ Usage volume and pricing never go on-chain.
 ## Layout
 
 A pnpm workspace. Each package is one layer, and they depend downwards:
-`agent-core` → `onchain-setup` → `proving-setup`.
+`web` and `agents/*` → `agent-core` → `onchain-setup` → `proving-setup`.
 
 | Path | What |
 |---|---|
@@ -21,6 +21,7 @@ A pnpm workspace. Each package is one layer, and they depend downwards:
 | `packages/agent-core/src/` | Opens channels, meters calls, quotes them over x402, settles. |
 | `agents/provider/` | Demo provider: weather, crypto price, translation over HTTP. |
 | `agents/consumer/` | Demo consumer: picks tools, meters calls, settles once. |
+| `web/` | Next.js landing page and channel dashboard. |
 
 Inside the Foundry project:
 
@@ -37,18 +38,32 @@ Chain id `84532`. Deployed with `script/Deploy.s.sol`.
 
 | Contract | Address |
 |---|---|
-| SlateEscrow | [`0xFB41816CEe58999EE95b8597B52518EfBc29d97E`](https://sepolia.basescan.org/address/0xFB41816CEe58999EE95b8597B52518EfBc29d97E) |
-| SlateAgentRegistry | [`0x11aE6A4A0600Da3E384BF39AE63f8Ac73EE59c80`](https://sepolia.basescan.org/address/0x11aE6A4A0600Da3E384BF39AE63f8Ac73EE59c80) |
-| Groth16Verifier | [`0x1BdA2De6DA7c46739f3247b4Aa50418F2d691474`](https://sepolia.basescan.org/address/0x1BdA2De6DA7c46739f3247b4Aa50418F2d691474) |
+| SlateEscrow | [`0x58216D0178C18014BdD60Ae1B29068e53CBe25ad`](https://sepolia.basescan.org/address/0x58216D0178C18014BdD60Ae1B29068e53CBe25ad) |
+| SlateAgentRegistry | [`0x7518B46ADA50ECb7A59F55825526C668F4e3EBfe`](https://sepolia.basescan.org/address/0x7518B46ADA50ECb7A59F55825526C668F4e3EBfe) |
+| Groth16Verifier | [`0x09eAa12EEf85a4Fcb1715E9E85d388836c6b1111`](https://sepolia.basescan.org/address/0x09eAa12EEf85a4Fcb1715E9E85d388836c6b1111) |
 | USDC (whitelisted) | [`0x036CbD53842c5426634e7929541eC2318f3dCF7e`](https://sepolia.basescan.org/address/0x036CbD53842c5426634e7929541eC2318f3dCF7e) |
 
 ```
 BASE_CHAIN_ID=84532
-BASE_RPC_URL=https://sepolia.base.org
-SLATE_ESCROW_ADDRESS=0xFB41816CEe58999EE95b8597B52518EfBc29d97E
-SLATE_REGISTRY_ADDRESS=0x11aE6A4A0600Da3E384BF39AE63f8Ac73EE59c80
-SETTLEMENT_TOKEN=0x036CbD53842c5426634e7929541eC2318f3dCF7e
+BASE_RPC_URL=https://base-sepolia-rpc.publicnode.com
+SLATE_ESCROW_ADDRESS=0x58216D0178C18014BdD60Ae1B29068e53CBe25ad
+SLATE_REGISTRY_ADDRESS=0x7518B46ADA50ECb7A59F55825526C668F4e3EBfe
 ```
+
+`SETTLEMENT_TOKEN` is omitted on purpose: it defaults to the USDC above.
+
+A settlement was verified against this deployment in
+[`0x93b0f7e8…55c5fc`](https://sepolia.basescan.org/tx/0x93b0f7e855298950766bfe2d721b8efce2326ff456b4f5403dff8bb04455c5fc).
+
+**The verifier and the proving key are a pair.** This escrow takes its verifier
+at construction and never lets it change, so a proof built with a different
+`settlement_final.zkey` fails with `InvalidProof()`. Redeploying after
+regenerating the key means redeploying the whole stack, and the addresses
+above stop being the ones to use.
+
+`https://sepolia.base.org` load-balances across nodes that do not always agree
+on an account's transaction count, which surfaces as `nonce too low` mid-way
+through opening a channel. The public node above has been steadier.
 
 Redeploy:
 
@@ -126,27 +141,86 @@ facilitator when `MOCK_X402=false`.
 
 Anvil has no facilitator, so local runs stay on the mock.
 
-## Demo agents
+## Running the app
 
-A consumer agent buys metered calls from a provider agent (weather,
-crypto price, translation). Usage stays off-chain; one Groth16 proof
-settles the session on Base.
+Three processes. The consumer opens its channel against the provider at
+startup, so start them in this order.
 
 ```sh
 pnpm install
 pnpm build
 
-# in-process demo (real APIs, mock chain unless EVM_PRIVATE_KEY is set)
-pnpm demo
-pnpm demo -- "Weather in Tokyo and the price of ETH"
-
-# or two HTTP servers — point the website at :4022
-pnpm serve:provider    # :4021
-pnpm serve:consumer    # :4022   POST /chat  POST /settle  GET /health
+pnpm serve:provider    # :4021  the metered API
+pnpm serve:consumer    # :4022  the agent that buys calls and settles
+pnpm serve:web         # :3000  the dashboard
 ```
 
-The consumer chat API matches the slate demo (`/health`, `/chat`,
-`/settle`, `/session/new`) so the website can talk to it unchanged.
+Then open **http://localhost:3000/dashboard**.
+
+### Environment
+
+Offline, everything mocked, one variable is enough:
+
+```
+X402_PAY_TO=0x…            # no safe default: an unset payee advertises nowhere
+```
+
+Settling on Base Sepolia needs a funded key and the deployed addresses:
+
+```
+EVM_PRIVATE_KEY=0x…        # funds escrow, submits settlement, pays gas
+BASE_CHAIN_ID=84532
+BASE_RPC_URL=https://base-sepolia-rpc.publicnode.com
+SLATE_ESCROW_ADDRESS=0x58216D0178C18014BdD60Ae1B29068e53CBe25ad
+SLATE_REGISTRY_ADDRESS=0x7518B46ADA50ECb7A59F55825526C668F4e3EBfe
+X402_PAY_TO=0x…
+```
+
+The depositor needs testnet USDC ([faucet.circle.com](https://faucet.circle.com),
+Base Sepolia) and a little ETH for gas. The provider is only paid, so it needs
+neither. `EVM_PRIVATE_KEY` is the switch: unset, settlement is mocked and the
+rest can stay blank; set, the two addresses become required and a missing one
+throws at startup. `SLATE_MOCK=true` forces mock back on without removing the
+key. Setting `OPENAI_API_KEY` swaps the offline keyword router for real tool
+selection. Full list in [`.env.example`](./.env.example).
+
+Both agents read the repo-root `.env`. The web app does not: Next reads
+`web/.env.local`, which needs the chain and contract addresses to show live
+data, plus `AGENT_URL` if the consumer is not on `http://localhost:4022`.
+
+### What the dashboard shows
+
+`/` is the landing page. `/dashboard` is the working surface:
+
+- **Agent session** — provider, advertised rate, brain, settlement mode, the
+  live channel, and the running meter. Ask it something and each answer costs
+  one metered call, tagged with the provider agent that served it. **Settle
+  channel** generates the proof and submits it; the transaction links to
+  Basescan. Settling closes the channel, so the next question needs **New
+  session**.
+- **Channel terms, Escrow, Deployment** — read straight from the registry and
+  the escrow. No key is involved: the page only reads. With no `?channel=` it
+  follows whatever the agent has open.
+- **Settlement inputs** — which of the thirteen signals the channel already
+  fixes, and which two the proof supplies.
+
+Without the deployed addresses the three lower panels show labelled sample
+data rather than an empty shell.
+
+### Without the browser
+
+```sh
+pnpm demo                                        # in-process, no HTTP
+pnpm demo -- "Weather in Tokyo and the price of ETH"
+
+curl -X POST localhost:4022/chat -H 'content-type: application/json' \
+  -d '{"message":"weather in Lisbon"}'
+curl -X POST localhost:4022/settle
+```
+
+The consumer serves `/health`, `/chat`, `/settle`, and `/session/new`; the web
+app proxies those under `/api/*` so the browser never talks to the agent
+directly.
 
 ## Develop
 
@@ -154,6 +228,7 @@ The consumer chat API matches the slate demo (`/health`, `/chat`,
 pnpm install
 pnpm test                              # every package
 pnpm test:e2e                          # spawns anvil
+pnpm --filter @slate-base/web build    # type-checks the app
 
 cd packages/onchain-setup/evm && forge test
 ```
