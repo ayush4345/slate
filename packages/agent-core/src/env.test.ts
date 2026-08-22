@@ -16,6 +16,11 @@ const full = {
 
 test("no key means mock mode, not a crash", () => {
   assert.equal(slateClientFromEnv({}), null);
+  assert.equal(slateClientFromEnv({ EVM_PRIVATE_KEY: "  " }), null);
+});
+
+test("SLATE_MOCK forces mock even when a key is set", () => {
+  assert.equal(slateClientFromEnv({ ...full, SLATE_MOCK: "true" }), null);
 });
 
 test("a key builds a client bound to the signer", () => {

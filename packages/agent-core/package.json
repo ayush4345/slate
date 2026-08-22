@@ -19,7 +19,7 @@
   ],
   "scripts": {
     "build": "tsc -b",
-    "test": "tsc -b && node --test dist/env.test.js dist/x402.test.js",
+    "test": "tsc -b && node --test dist/env.test.js dist/x402.test.js dist/prove.test.js dist/money.test.js dist/channel.test.js dist/toolbox.test.js",
     "test:e2e": "tsc -b && node --test dist/anvil.e2e.test.js",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
