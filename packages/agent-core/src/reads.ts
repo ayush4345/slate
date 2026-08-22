@@ -1,7 +1,7 @@
 import type { Address, PublicClient } from "viem";
 
-import { escrowAbi, registryAbi, verifierAbi } from "./abi.js";
-import type { PublicSignals, Settlement } from "./settlement.js";
+import { escrowAbi, registryAbi, verifierAbi } from "@slate-base/onchain-setup";
+import type { PublicSignals, Settlement } from "@slate-base/proving-setup";
 
 type Signals13 = readonly [
   bigint, bigint, bigint, bigint, bigint, bigint, bigint,

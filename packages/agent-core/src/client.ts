@@ -10,15 +10,15 @@ import {
   type WalletClient,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { base, baseSepolia, foundry } from "viem/chains";
+import { baseSepolia } from "viem/chains";
 
-import { erc20Abi, escrowAbi, registryAbi } from "./abi.js";
-import { addressToFieldPair, SIGNAL, type Settlement } from "./settlement.js";
-
-export interface ContractAddresses {
-  escrow: Address;
-  registry: Address;
-}
+import {
+  erc20Abi,
+  escrowAbi,
+  registryAbi,
+  type ContractAddresses,
+} from "@slate-base/onchain-setup";
+import { addressToFieldPair, SIGNAL, type Settlement } from "@slate-base/proving-setup";
 
 export interface SlateClientOptions {
   rpcUrl: string;
@@ -246,9 +246,6 @@ export class SlateClient {
     return hash;
   }
 }
-
-/** Chains this client is configured for. */
-export const CHAINS = { base, baseSepolia, foundry } as const;
 
 /** Build a signing account from a `0x…` private key. */
 export function accountFromPrivateKey(privateKey: string): Account {
