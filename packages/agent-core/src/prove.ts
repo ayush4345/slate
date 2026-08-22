@@ -3,10 +3,10 @@ import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { addressToFieldPair, toSettlement, type Settlement } from "./settlement.js";
+import { addressToFieldPair, toSettlement, type Settlement } from "@slate-base/proving-setup";
 
-const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "../..");
-const ensureScript = join(repoRoot, "sdk/scripts/ensure-proving.mjs");
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "../../..");
+const ensureScript = join(repoRoot, "packages/onchain-setup/scripts/ensure-proving.mjs");
 
 export interface ProvingArtifacts {
   zkey: string;
@@ -55,7 +55,7 @@ export function evmAddressToPayload(address: `0x${string}`): Uint8Array {
 
 /**
  * Build a proving key + matching verifier Solidity, using the sibling
- * `proving-setup` r1cs. Cached under `sdk/.cache/`.
+ * `proving-setup` r1cs. Cached under `.cache/`.
  */
 export function ensureProvingArtifacts(): ProvingArtifacts {
   const printed = execFileSync("node", [ensureScript], {

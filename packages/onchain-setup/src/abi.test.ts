@@ -5,11 +5,12 @@ import { fileURLToPath } from "node:url";
 
 import { escrowAbi, registryAbi, verifierAbi } from "./abi.js";
 
-const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
+/** `forge` runs where foundry.toml is — resolved from `dist/`, not `src/`. */
+const forgeRoot = fileURLToPath(new URL("../evm/", import.meta.url));
 
 function inspect(contract: string): unknown {
   const raw = execFileSync("forge", ["inspect", contract, "abi", "--json"], {
-    cwd: repoRoot,
+    cwd: forgeRoot,
     encoding: "utf8",
   });
   return JSON.parse(raw);

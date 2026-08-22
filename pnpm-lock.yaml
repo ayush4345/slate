@@ -6,19 +6,20 @@ settings:
 
 importers:
 
-  .: {}
+  .:
+    devDependencies:
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
 
   agents/consumer:
     dependencies:
       '@slate-base/agent-core':
         specifier: workspace:*
-        version: link:../core
+        version: link:../../packages/agent-core
       '@slate-base/agent-provider':
         specifier: workspace:*
         version: link:../provider
-      '@slate-base/sdk':
-        specifier: workspace:*
-        version: link:../../sdk
       dotenv:
         specifier: ^16.4.5
         version: 16.6.1
@@ -43,24 +44,11 @@ importers:
         specifier: ^4.57.0
         version: 4.104.0(ws@8.21.0)
 
-  agents/core:
-    dependencies:
-      '@slate-base/sdk':
-        specifier: workspace:*
-        version: link:../../sdk
-    devDependencies:
-      '@types/node':
-        specifier: ^26.0.1
-        version: 26.2.0
-      typescript:
-        specifier: ^5.9.2
-        version: 5.9.3
-
   agents/provider:
     dependencies:
       '@slate-base/agent-core':
         specifier: workspace:*
-        version: link:../core
+        version: link:../../packages/agent-core
       dotenv:
         specifier: ^16.4.5
         version: 16.6.1
@@ -81,11 +69,39 @@ importers:
         specifier: ^5.9.2
         version: 5.9.3
 
-  sdk:
+  packages/agent-core:
+    dependencies:
+      '@slate-base/onchain-setup':
+        specifier: workspace:*
+        version: link:../onchain-setup
+      '@slate-base/proving-setup':
+        specifier: workspace:*
+        version: link:../proving-setup
+      viem:
+        specifier: ^2.39.4
+        version: 2.55.19(typescript@5.9.3)
+    devDependencies:
+      '@types/node':
+        specifier: ^26.0.1
+        version: 26.2.0
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+
+  packages/onchain-setup:
     dependencies:
       viem:
         specifier: ^2.39.4
         version: 2.55.19(typescript@5.9.3)
+    devDependencies:
+      '@types/node':
+        specifier: ^26.0.1
+        version: 26.2.0
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+
+  packages/proving-setup:
     devDependencies:
       '@types/node':
         specifier: ^26.0.1

@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
+import { addressToFieldPair } from "@slate-base/proving-setup";
+
 import { evmAddressToPayload } from "./prove.js";
-import { addressToFieldPair } from "./settlement.js";
 
 test("evmAddressToPayload left-pads to 32 bytes that split back to the field pair", () => {
   const addr = "0xdeadbeef00000000000000000000000000000001";

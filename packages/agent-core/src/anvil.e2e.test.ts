@@ -8,7 +8,7 @@ import { createPublicClient, createWalletClient, http, parseAbi, type Address } 
 import { foundry } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 
-import { erc20Abi, escrowAbi } from "./abi.js";
+import { erc20Abi, escrowAbi } from "@slate-base/onchain-setup";
 import { accountFromPrivateKey, SlateClient } from "./client.js";
 import { ensureProvingArtifacts, proveSettlement } from "./prove.js";
 import {
@@ -19,9 +19,14 @@ import {
   registryHasChannel,
   verifierVerify,
 } from "./reads.js";
-import { toPublicSignals, type ProofCalldata, type Settlement } from "./settlement.js";
+import {
+  toPublicSignals,
+  type ProofCalldata,
+  type Settlement,
+} from "@slate-base/proving-setup";
 
-const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
+/** The Foundry project, resolved from `dist/`. */
+const forgeRoot = fileURLToPath(new URL("../../onchain-setup/evm/", import.meta.url));
 
 /** Anvil account 0 — the DeployLocal broadcaster and the depositor. */
 const DEPLOYER_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
@@ -99,11 +104,11 @@ async function deploy(rpcUrl: string): Promise<Deployed> {
       "--private-key",
       DEPLOYER_KEY,
     ],
-    { cwd: repoRoot, stdio: "pipe" },
+    { cwd: forgeRoot, stdio: "pipe" },
   );
 
   const run = JSON.parse(
-    readFileSync(`${repoRoot}/broadcast/DeployLocal.s.sol/31337/run-latest.json`, "utf8"),
+    readFileSync(`${forgeRoot}broadcast/DeployLocal.s.sol/31337/run-latest.json`, "utf8"),
   ) as {
     transactions: Array<{ contractName?: string; contractAddress?: string }>;
   };
@@ -139,7 +144,7 @@ async function deployWithGeneratedVerifier(rpcUrl: string): Promise<Deployed> {
         "--broadcast",
         ...(args.length > 0 ? ["--constructor-args", ...args] : []),
       ],
-      { cwd: repoRoot, encoding: "utf8" },
+      { cwd: forgeRoot, encoding: "utf8" },
     );
     const match = out.match(/Deployed to: (0x[0-9a-fA-F]{40})/);
     if (!match) throw new Error(`forge create ${artifact} produced no address:\n${out}`);

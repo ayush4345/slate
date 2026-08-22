@@ -1,5 +1,5 @@
 {
-  "name": "@slate-base/sdk",
+  "name": "@slate-base/proving-setup",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -19,14 +19,8 @@
   ],
   "scripts": {
     "build": "tsc -b",
-    "generate:abi": "node scripts/generate-abi.mjs",
-    "test": "tsc -b && node --test dist/settlement.test.js dist/abi.test.js dist/env.test.js dist/prove.test.js",
-    "test:e2e": "tsc -b && node --test dist/anvil.e2e.test.js",
-    "prove:setup": "node scripts/ensure-proving.mjs",
+    "test": "tsc -b && node --test dist/settlement.test.js",
     "clean": "rm -rf dist *.tsbuildinfo"
-  },
-  "dependencies": {
-    "viem": "^2.39.4"
   },
   "devDependencies": {
     "@types/node": "^26.0.1",

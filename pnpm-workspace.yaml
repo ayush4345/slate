@@ -1,5 +1,4 @@
 packages:
-  - sdk
-  - agents/core
-  - agents/provider
-  - agents/consumer
+  - "packages/*"
+  - "agents/provider"
+  - "agents/consumer"

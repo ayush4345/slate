@@ -1,11 +1,10 @@
 import { randomBytes } from "node:crypto";
-import type { Settlement } from "@slate-base/sdk";
-import {
-  pinChannelTerms,
-  proveSettlement,
-  slateClientFromEnv,
-  type SlateClient,
-} from "@slate-base/sdk";
+
+import type { Settlement } from "@slate-base/proving-setup";
+
+import { SlateClient } from "./client.js";
+import { slateClientFromEnv } from "./env.js";
+import { pinChannelTerms, proveSettlement } from "./prove.js";
 
 export type Address = `0x${string}`;
 
@@ -70,4 +69,4 @@ export function realChainFromEnv(env: NodeJS.ProcessEnv = process.env): RealChai
   };
 }
 
-export { pinChannelTerms, proveSettlement };
+export { SlateClient };

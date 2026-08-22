@@ -7,15 +7,15 @@
  * the anvil e2e can prove and settle. The resulting verifier is deployed only
  * in that e2e — it does not replace the committed one.
  *
- *   node sdk/scripts/ensure-proving.mjs
+ *   node packages/onchain-setup/scripts/ensure-proving.mjs
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "../..");
-const cacheDir = join(repoRoot, "sdk/.cache");
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "../../..");
+const cacheDir = join(repoRoot, ".cache");
 const provingRoot = process.env.PROVING_SETUP ?? join(repoRoot, "../slate/packages/proving-setup");
 
 const r1cs = join(provingRoot, "settlement.r1cs");

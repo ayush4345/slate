@@ -24,7 +24,6 @@
   "dependencies": {
     "@slate-base/agent-core": "workspace:*",
     "@slate-base/agent-provider": "workspace:*",
-    "@slate-base/sdk": "workspace:*",
     "dotenv": "^16.4.5",
     "express": "^5.1.0"
   },
