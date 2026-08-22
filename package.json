@@ -4,11 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc -b && pnpm --filter @slate-base/agent-provider build && pnpm --filter @slate-base/agent-consumer build",
     "clean": "tsc -b --clean",
     "test": "tsc -b && pnpm -r --no-bail test",
     "test:e2e": "pnpm --filter @slate-base/agent-core test:e2e",
-    "generate:abi": "pnpm --filter @slate-base/onchain-setup generate:abi"
+    "generate:abi": "pnpm --filter @slate-base/onchain-setup generate:abi",
+    "demo": "pnpm --filter @slate-base/agent-consumer demo",
+    "serve:provider": "pnpm --filter @slate-base/agent-provider serve",
+    "serve:consumer": "pnpm --filter @slate-base/agent-consumer serve"
   },
   "devDependencies": {
     "typescript": "^5.9.2"

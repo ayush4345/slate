@@ -20,7 +20,7 @@ export interface SlateEnvSetup {
 }
 
 function required(env: NodeJS.ProcessEnv, name: string): string {
-  const value = env[name];
+  const value = env[name]?.trim();
   if (!value) throw new SlateClientError(`${name} is required once EVM_PRIVATE_KEY is set`);
   return value;
 }
@@ -55,7 +55,9 @@ function address(env: NodeJS.ProcessEnv, name: string): Address {
  *  - `BASE_RPC_URL`             defaults to the chain's public RPC.
  */
 export function slateClientFromEnv(env: NodeJS.ProcessEnv = process.env): SlateEnvSetup | null {
-  const privateKey = env.EVM_PRIVATE_KEY;
+  if ((env.SLATE_MOCK ?? "").toLowerCase() === "true") return null;
+
+  const privateKey = env.EVM_PRIVATE_KEY?.trim();
   if (!privateKey) return null;
 
   const chainId = env.BASE_CHAIN_ID ? Number(env.BASE_CHAIN_ID) : baseSepolia.id;
