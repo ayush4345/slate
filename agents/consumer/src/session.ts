@@ -1,0 +1,376 @@
+import { randomBytes } from "node:crypto";
+import {
+  MockChainClient,
+  parseUnits,
+  pinChannelTerms,
+  proveSettlement,
+  realChainFromEnv,
+  RemoteChannel,
+  type Address,
+  type ChainClient,
+  type ChannelTerms,
+  type ProviderTerms,
+} from "@slate-base/agent-core";
+import { TOOL_SPECS } from "@slate-base/agent-provider";
+import { ServiceAgent } from "./agent.js";
+import type { AgentRunResult, ProviderSettlement, TurnPayment } from "./agent.js";
+import { StubAgentBrain } from "./stub-agent.js";
+import { OpenAiAgentBrain } from "./openai-agent.js";
+import type { ConsumerServerConfig } from "./config.js";
+import { TOOL_PROVIDERS } from "./providers.js";
+
+function randField(): bigint {
+  return BigInt("0x" + randomBytes(31).toString("hex"));
+}
+
+type ToolStats = { sessionCalls: number; sessionBillable: bigint };
+
+export interface ChatResult extends AgentRunResult {
+  payment: TurnPayment;
+}
+
+export interface SettleStep {
+  kind: "proof" | "verify" | "transfer" | "done" | "skipped";
+  label: string;
+  detail?: string;
+}
+
+export interface SettleOutcome {
+  settled: boolean;
+  reason?: string;
+  steps: SettleStep[];
+  settleTx?: string;
+  totalUnits?: string;
+  settlementAmount?: string;
+  escrow?: string;
+  tokenSymbol: string;
+}
+
+/**
+ * One metered session against a remote provider.
+ *
+ * Discovers the provider's 402 terms, opens a channel (and funds escrow
+ * on Base when `EVM_PRIVATE_KEY` is set), serves many chat turns, and
+ * settles once with a Groth16 proof.
+ */
+export class AgentSession {
+  #channel: RemoteChannel | undefined;
+  #chain: ChainClient | undefined;
+  #terms: ChannelTerms | undefined;
+  #advertised: ProviderTerms | undefined;
+  #depositor: Address | undefined;
+  #provider: Address | undefined;
+  #token: Address | undefined;
+  #ready = false;
+  #busy = false;
+  #sessionBillable = 0n;
+  #sessionCalls = 0;
+  #byTool = new Map<string, ToolStats>();
+  #tokenSymbol: string;
+
+  constructor(private readonly config: ConsumerServerConfig) {
+    this.#tokenSymbol = process.env.SETTLEMENT_TOKEN_SYMBOL ?? "USDC";
+  }
+
+  get ready(): boolean {
+    return this.#ready;
+  }
+
+  getProviderTerms(): { rate?: string; address?: string; asset?: string } {
+    const out: { rate?: string; address?: string; asset?: string } = {};
+    if (this.#advertised?.rate !== undefined) out.rate = this.#advertised.rate;
+    if (this.#advertised?.payTo !== undefined) out.address = this.#advertised.payTo;
+    if (this.#advertised?.asset !== undefined) out.asset = this.#advertised.asset;
+    return out;
+  }
+
+  getPaymentSummary(): TurnPayment {
+    return {
+      turnCalls: 0,
+      turnBillable: "0",
+      sessionCalls: this.#sessionCalls,
+      sessionBillable: this.#sessionBillable.toString(),
+      tokenSymbol: this.#tokenSymbol,
+      providers: this.#allSessionProviders(),
+    };
+  }
+
+  async initialize(): Promise<void> {
+    const escrow = parseUnits(this.config.escrow);
+    const real = realChainFromEnv();
+    const chain: ChainClient = real?.chain ?? new MockChainClient();
+
+    const channelId = randField();
+    const rateBlind = randField();
+    const channelSecret = randField();
+    const consumerPrivateKey = randomBytes(32);
+
+    const advertised = await RemoteChannel.open({
+      providerUrl: this.config.providerUrl,
+      channelId,
+      escrow,
+      payment: this.config.paymentSignature,
+    }).then((channel) => {
+      this.#channel = channel;
+      return channel.advertised;
+    });
+
+    const rate = parseUnits(advertised.rate);
+    const terms: ChannelTerms = {
+      channelId,
+      rate,
+      rateBlind,
+      escrow,
+      channelSecret,
+      consumerPrivateKey,
+    };
+
+    const depositor = real?.depositor ?? ("0x0000000000000000000000000000000000000001" as Address);
+    const provider = (advertised.payTo as Address | undefined) ?? real?.provider ?? depositor;
+    const token = (advertised.asset as Address | undefined) ?? real?.token ?? depositor;
+
+    if (real) {
+      const pinned = await pinChannelTerms({
+        channelId,
+        channelSecret,
+        rate,
+        rateBlind,
+        escrowAmount: escrow,
+        depositor,
+        provider,
+        token,
+        consumerPrivateKey,
+      });
+      await chain.openChannel({
+        channelId,
+        rateCommitment: pinned.rateCommitment,
+        consumerPublicKey: pinned.consumerPublicKey,
+        provider,
+        token,
+        escrow,
+      });
+    } else {
+      await chain.openChannel({
+        channelId,
+        rateCommitment: randField(),
+        consumerPublicKey: { x: randField(), y: randField() },
+        provider,
+        token,
+        escrow,
+      });
+    }
+
+    this.#chain = chain;
+    this.#terms = terms;
+    this.#advertised = advertised;
+    this.#depositor = depositor;
+    this.#provider = provider;
+    this.#token = token;
+    this.#sessionBillable = 0n;
+    this.#sessionCalls = 0;
+    this.#byTool.clear();
+    this.#ready = true;
+  }
+
+  async chat(message: string): Promise<ChatResult> {
+    if (!this.#ready || this.#channel === undefined) {
+      throw new Error("session not ready");
+    }
+    if (this.#busy) throw new Error("session busy");
+
+    this.#busy = true;
+    try {
+      const useOpenAi = Boolean(process.env.OPENAI_API_KEY);
+      const brain = useOpenAi ? new OpenAiAgentBrain() : new StubAgentBrain();
+      const result = await new ServiceAgent(this.#channel, brain, TOOL_SPECS).run(message.trim());
+
+      const served = result.calls.filter((c) => c.served);
+      const rate = this.#terms?.rate ?? 0n;
+      const turnCounts = new Map<string, number>();
+
+      for (const call of served) {
+        turnCounts.set(call.tool, (turnCounts.get(call.tool) ?? 0) + 1);
+        const prev = this.#byTool.get(call.tool) ?? { sessionCalls: 0, sessionBillable: 0n };
+        prev.sessionCalls += 1;
+        prev.sessionBillable += rate;
+        this.#byTool.set(call.tool, prev);
+      }
+
+      const turnCalls = served.length;
+      const lastBillable = served.at(-1)?.billable;
+      const turnBillable =
+        lastBillable !== undefined
+          ? BigInt(lastBillable) - this.#sessionBillable
+          : BigInt(turnCalls) * rate;
+
+      if (lastBillable !== undefined) {
+        this.#sessionBillable = BigInt(lastBillable);
+      } else {
+        this.#sessionBillable += turnBillable;
+      }
+      this.#sessionCalls += turnCalls;
+
+      return {
+        ...result,
+        payment: {
+          turnCalls,
+          turnBillable: turnBillable.toString(),
+          sessionCalls: this.#sessionCalls,
+          sessionBillable: this.#sessionBillable.toString(),
+          tokenSymbol: this.#tokenSymbol,
+          providers: this.#buildProviderSettlements(turnCounts),
+        },
+      };
+    } finally {
+      this.#busy = false;
+    }
+  }
+
+  async settle(): Promise<SettleOutcome> {
+    const tokenSymbol = this.#tokenSymbol;
+    if (this.#terms === undefined || this.#chain === undefined || this.#channel === undefined) {
+      return {
+        settled: false,
+        reason: "no active channel to settle",
+        steps: [{ kind: "skipped", label: "No active channel", detail: "Open a session first." }],
+        tokenSymbol,
+      };
+    }
+
+    const closed = await this.#channel.close();
+    if (closed.totalUnits === 0n) {
+      this.#teardown();
+      return {
+        settled: false,
+        reason: "no accepted vouchers — nothing to settle",
+        steps: [
+          { kind: "skipped", label: "Nothing to settle", detail: "No metered calls were made this session." },
+        ],
+        tokenSymbol,
+      };
+    }
+
+    const steps: SettleStep[] = [];
+    try {
+      const real = this.#depositor !== undefined && this.#provider !== undefined && this.#token !== undefined
+        && realChainFromEnv() !== null;
+
+      if (real && this.#depositor && this.#provider && this.#token) {
+        const { settlement } = await proveSettlement({
+          channelId: this.#terms.channelId,
+          channelSecret: this.#terms.channelSecret,
+          rate: this.#terms.rate,
+          rateBlind: this.#terms.rateBlind,
+          totalUnits: closed.totalUnits,
+          escrowAmount: this.#terms.escrow,
+          depositor: this.#depositor,
+          provider: this.#provider,
+          token: this.#token,
+          consumerPrivateKey: this.#terms.consumerPrivateKey,
+        });
+        steps.push({
+          kind: "proof",
+          label: "Groth16 settlement proof generated",
+          detail: `${closed.totalUnits} unit(s) · 13-signal circuit input`,
+        });
+        const settled = await this.#chain.settle(settlement);
+        steps.push({
+          kind: "verify",
+          label: "Proof verified on-chain",
+          detail: "pairing check · settlement ≤ escrow · nullifier unspent",
+        });
+        steps.push({
+          kind: "transfer",
+          label: "Split transfer executed",
+          detail: "settlement → provider, remaining escrow refunded to depositor",
+        });
+        steps.push({ kind: "done", label: "Settlement complete", detail: settled.settleTx });
+        this.#teardown();
+        return {
+          settled: true,
+          steps,
+          settleTx: settled.settleTx,
+          totalUnits: closed.totalUnits.toString(),
+          settlementAmount: closed.settlementAmount.toString(),
+          escrow: closed.escrow.toString(),
+          tokenSymbol,
+        };
+      }
+
+      const settled = await this.#chain.settle();
+      steps.push({
+        kind: "proof",
+        label: "Mock settlement (no EVM_PRIVATE_KEY)",
+        detail: `${closed.totalUnits} unit(s) metered off-chain`,
+      });
+      steps.push({ kind: "done", label: "Settlement complete", detail: settled.settleTx });
+      this.#teardown();
+      return {
+        settled: true,
+        steps,
+        settleTx: settled.settleTx,
+        totalUnits: closed.totalUnits.toString(),
+        settlementAmount: closed.settlementAmount.toString(),
+        escrow: closed.escrow.toString(),
+        tokenSymbol,
+      };
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      steps.push({ kind: "skipped", label: "Settlement failed", detail: reason });
+      return { settled: false, reason, steps, tokenSymbol };
+    }
+  }
+
+  async newSession(): Promise<void> {
+    if (this.#ready) this.#teardown();
+    await this.initialize();
+  }
+
+  #teardown(): void {
+    this.#ready = false;
+    this.#channel = undefined;
+    this.#terms = undefined;
+    this.#chain = undefined;
+    this.#advertised = undefined;
+  }
+
+  async shutdown(): Promise<void> {
+    await this.settle();
+  }
+
+  #buildProviderSettlements(turnCounts: Map<string, number>): ProviderSettlement[] {
+    const rate = this.#terms?.rate ?? 0n;
+    const providers: ProviderSettlement[] = [];
+    for (const [tool, meta] of Object.entries(TOOL_PROVIDERS)) {
+      const turnCalls = turnCounts.get(tool) ?? 0;
+      const stats = this.#byTool.get(tool) ?? { sessionCalls: 0, sessionBillable: 0n };
+      providers.push({
+        providerId: meta.id,
+        providerLabel: meta.label,
+        tool,
+        turnCalls,
+        turnBillable: (BigInt(turnCalls) * rate).toString(),
+        sessionCalls: stats.sessionCalls,
+        sessionBillable: stats.sessionBillable.toString(),
+      });
+    }
+    return providers.sort((a, b) => a.providerLabel.localeCompare(b.providerLabel));
+  }
+
+  #allSessionProviders(): ProviderSettlement[] {
+    const providers: ProviderSettlement[] = [];
+    for (const [tool, meta] of Object.entries(TOOL_PROVIDERS)) {
+      const stats = this.#byTool.get(tool) ?? { sessionCalls: 0, sessionBillable: 0n };
+      providers.push({
+        providerId: meta.id,
+        providerLabel: meta.label,
+        tool,
+        turnCalls: 0,
+        turnBillable: "0",
+        sessionCalls: stats.sessionCalls,
+        sessionBillable: stats.sessionBillable.toString(),
+      });
+    }
+    return providers.sort((a, b) => a.providerLabel.localeCompare(b.providerLabel));
+  }
+}

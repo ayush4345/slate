@@ -7,4 +7,11 @@ export * from "./settlement.js";
 export * from "./client.js";
 export * from "./env.js";
 export * from "./reads.js";
+export {
+  evmAddressToPayload,
+  ensureProvingArtifacts,
+  pinChannelTerms,
+  proveSettlement,
+} from "./prove.js";
+export type { ProvingArtifacts, ProveArgs, BuiltChannelTerms } from "./prove.js";
 export { erc20Abi, escrowAbi, registryAbi, verifierAbi } from "./abi.js";

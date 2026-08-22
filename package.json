@@ -1,0 +1,12 @@
+{
+  "name": "slate-base",
+  "private": true,
+  "packageManager": "pnpm@10.11.0",
+  "scripts": {
+    "build": "pnpm --filter @slate-base/sdk build && pnpm --filter @slate-base/agent-core build && pnpm --filter @slate-base/agent-provider build && pnpm --filter @slate-base/agent-consumer build",
+    "test": "pnpm --filter @slate-base/sdk test && pnpm --filter @slate-base/agent-core test && pnpm --filter @slate-base/agent-provider test && pnpm --filter @slate-base/agent-consumer test",
+    "demo": "pnpm --filter @slate-base/agent-consumer demo",
+    "serve:provider": "pnpm --filter @slate-base/agent-provider serve",
+    "serve:consumer": "pnpm --filter @slate-base/agent-consumer serve"
+  }
+}
