@@ -12,7 +12,6 @@ const full = {
   EVM_PRIVATE_KEY: KEY,
   SLATE_ESCROW_ADDRESS: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
   SLATE_REGISTRY_ADDRESS: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-  SETTLEMENT_TOKEN: USDC,
 } as NodeJS.ProcessEnv;
 
 test("no key means mock mode, not a crash", () => {
@@ -23,17 +22,13 @@ test("a key builds a client bound to the signer", () => {
   const setup = slateClientFromEnv(full)!;
   assert.equal(setup.depositor, DEPOSITOR);
   assert.equal(setup.provider, DEPOSITOR, "provider defaults to the depositor");
-  assert.equal(setup.token, USDC);
+  assert.equal(setup.token, USDC, "defaults to USDC on Base Sepolia");
   assert.equal(setup.chain.id, 84532, "Base Sepolia by default");
   assert.equal(setup.client.address, DEPOSITOR);
 });
 
 test("every deployed address is required once the key is set", () => {
-  for (const name of [
-    "SLATE_ESCROW_ADDRESS",
-    "SLATE_REGISTRY_ADDRESS",
-    "SETTLEMENT_TOKEN",
-  ]) {
+  for (const name of ["SLATE_ESCROW_ADDRESS", "SLATE_REGISTRY_ADDRESS"]) {
     const env = { ...full };
     delete env[name];
     assert.throws(() => slateClientFromEnv(env), new RegExp(`${name} is required`));
@@ -49,8 +44,16 @@ test("a malformed address is refused, not coerced", () => {
   );
 });
 
+/// Anvil's token is deployed per-run, so there is nothing to default to.
+test("anvil must name its own token", () => {
+  assert.throws(
+    () => slateClientFromEnv({ ...full, BASE_CHAIN_ID: "31337" }),
+    /SETTLEMENT_TOKEN is required on chain 31337/,
+  );
+});
+
 test("anvil is selectable and defaults to the local node", () => {
-  const setup = slateClientFromEnv({ ...full, BASE_CHAIN_ID: "31337" })!;
+  const setup = slateClientFromEnv({ ...full, BASE_CHAIN_ID: "31337", SETTLEMENT_TOKEN: USDC })!;
   assert.equal(setup.chain.id, 31337);
   assert.equal(setup.client.publicClient.transport.url, "http://127.0.0.1:8545");
 });
