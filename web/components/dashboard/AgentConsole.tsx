@@ -2,8 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import Markdown from "./Markdown";
+
 interface Health {
   ok?: boolean;
+  channel?: { channelId?: string; depositor?: string; token?: string };
   provider?: { name?: string; url?: string };
   providerTerms?: { rate?: string; payTo?: string; asset?: string; network?: string } | null;
   brain?: string;
@@ -18,6 +21,7 @@ interface Payment {
   sessionCalls?: number;
   sessionBillable?: string;
   tokenSymbol?: string;
+  providers?: { providerLabel?: string; turnCalls?: number }[];
 }
 
 interface Turn {
@@ -25,6 +29,8 @@ interface Turn {
   question: string;
   answer: string;
   calls?: number;
+  /** Which provider agents actually served this turn. */
+  servedBy?: string[];
   pending?: boolean;
   failed?: boolean;
 }
@@ -62,6 +68,13 @@ function formatUnits6(raw: string | undefined): string {
   return frac ? `${whole}.${frac}` : whole.toString();
 }
 
+/** The provider agents that served calls in this turn, in the order reported. */
+function servedBy(payment: Payment | undefined): string[] {
+  return (payment?.providers ?? [])
+    .filter((p) => (p.turnCalls ?? 0) > 0)
+    .map((p) => p.providerLabel ?? "unknown");
+}
+
 async function post<T>(path: string, body?: unknown): Promise<T> {
   const res = await fetch(path, {
     method: "POST",
@@ -76,7 +89,7 @@ async function post<T>(path: string, body?: unknown): Promise<T> {
  * settle. Every call here goes through this app's own /api routes, which proxy
  * to the agent process.
  */
-export default function AgentConsole() {
+export default function AgentConsole({ explorer }: { explorer: string }) {
   const [health, setHealth] = useState<Health | null>(null);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [question, setQuestion] = useState("");
@@ -122,6 +135,7 @@ export default function AgentConsole() {
                 failed: !data.ok,
                 answer: data.ok ? (data.answer ?? "") : (data.error ?? "the agent did not answer"),
                 ...(data.payment?.turnCalls !== undefined ? { calls: data.payment.turnCalls } : {}),
+                ...(servedBy(data.payment).length > 0 ? { servedBy: servedBy(data.payment) } : {}),
               }
             : turn,
         ),
@@ -152,6 +166,16 @@ export default function AgentConsole() {
 
   const reachable = health?.ok !== undefined || health?.payment !== undefined;
   const metered = health?.payment;
+  const liveChannel = health?.channel?.channelId;
+
+  const txLink = (hash: string) =>
+    explorer ? (
+      <a className="console__tx" href={`${explorer}/tx/${hash}`} target="_blank" rel="noreferrer noopener">
+        {hash}
+      </a>
+    ) : (
+      <span className="console__tx">{hash}</span>
+    );
 
   return (
     <section className="panel panel--wide console" aria-labelledby="p-agent">
@@ -185,6 +209,18 @@ export default function AgentConsole() {
               <dd>{health?.settlementMode === "base" ? "on Base" : "mock"}</dd>
             </div>
             <div>
+              <dt>Channel</dt>
+              <dd className="is-num">
+                {liveChannel ? (
+                  <a href={`/dashboard?channel=${liveChannel}`} title={liveChannel}>
+                    {`${liveChannel.slice(0, 8)}…`}
+                  </a>
+                ) : (
+                  "none open"
+                )}
+              </dd>
+            </div>
+            <div>
               <dt>Metered</dt>
               <dd className="is-num">
                 {metered?.sessionCalls ?? 0} calls · {formatUnits6(metered?.sessionBillable)}{" "}
@@ -193,8 +229,15 @@ export default function AgentConsole() {
             </div>
           </dl>
 
+          {health?.ok === false && (
+            <p className="console__notice" role="status">
+              No open channel. Settling closes the one it settled, so the next question needs
+              a fresh one: press <b>New session</b>.
+            </p>
+          )}
+
           <ol className="console__log">
-            {turns.length === 0 && (
+            {turns.length === 0 && health?.ok !== false && (
               <li className="console__hint">
                 Ask for the weather, a crypto price, or a translation. Each answer costs one
                 metered call.
@@ -203,11 +246,20 @@ export default function AgentConsole() {
             {turns.map((turn) => (
               <li key={turn.id}>
                 <p className="console__q">{turn.question}</p>
-                <p className={turn.failed ? "console__a is-failed" : "console__a"}>
-                  {turn.pending ? "…" : turn.answer}
-                </p>
+                {turn.pending ? (
+                  <p className="console__a">…</p>
+                ) : turn.failed ? (
+                  <p className="console__a is-failed">{turn.answer}</p>
+                ) : (
+                  <div className="console__a">
+                    <Markdown>{turn.answer}</Markdown>
+                  </div>
+                )}
                 {turn.calls !== undefined && (
-                  <p className="console__meta">{turn.calls} call(s) metered</p>
+                  <p className="console__meta">
+                    {turn.calls} call(s) metered
+                    {turn.servedBy && turn.servedBy.length > 0 && ` (${turn.servedBy.join(", ")})`}
+                  </p>
                 )}
               </li>
             ))}
@@ -224,7 +276,11 @@ export default function AgentConsole() {
               placeholder="What is the weather in Lisbon?"
               disabled={busy !== null}
             />
-            <button className="btn btn--solid" type="submit" disabled={busy !== null}>
+            <button
+              className="btn btn--solid"
+              type="submit"
+              disabled={busy !== null || health?.ok === false}
+            >
               {busy === "chat" ? "Asking…" : "Ask"}
             </button>
             <button className="btn btn--line" type="button" onClick={settle} disabled={busy !== null}>
@@ -249,15 +305,19 @@ export default function AgentConsole() {
               </p>
               {settlement.steps && (
                 <ol className="console__steps">
-                  {settlement.steps.map((step, i) => (
-                    <li key={`${step.kind}-${i}`} data-kind={step.kind}>
-                      <b>{step.label}</b>
-                      {step.detail && <span>{step.detail}</span>}
-                    </li>
-                  ))}
+                  {settlement.steps.map((step, i) => {
+                    // The final step's detail is the transaction hash itself,
+                    // so it becomes the link rather than being repeated below.
+                    const isTx = step.detail !== undefined && step.detail === settlement.settleTx;
+                    return (
+                      <li key={`${step.kind}-${i}`} data-kind={step.kind}>
+                        <b>{step.label}</b>
+                        {step.detail && (isTx ? txLink(step.detail) : <span>{step.detail}</span>)}
+                      </li>
+                    );
+                  })}
                 </ol>
               )}
-              {settlement.settleTx && <p className="console__tx">{settlement.settleTx}</p>}
             </div>
           )}
         </>

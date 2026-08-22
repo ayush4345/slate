@@ -14,6 +14,8 @@ import { baseSepolia } from "viem/chains";
 export interface Deployment {
   chainName: string;
   chainId: number;
+  /** Block explorer root, for linking transactions. Empty on a local chain. */
+  explorer: string;
   escrow: Address;
   registry: Address;
   verifier: Address;
@@ -38,6 +40,7 @@ const DEMO: Omit<ChannelView, "channelId"> = {
   deployment: {
     chainName: "Base Sepolia",
     chainId: baseSepolia.id,
+    explorer: baseSepolia.blockExplorers.default.url,
     escrow: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
     registry: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
     verifier: "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
@@ -85,9 +88,14 @@ export async function loadChannel(channelId: bigint): Promise<ChannelView> {
     ]);
     const channel = exists ? await registryGetChannel(reads, channelId) : null;
     const token = channel?.token ?? defaultToken(chain.id) ?? escrow;
+    // With no channel there is no depositor to ask about, unless one is
+    // configured: the escrow keys balances by (depositor, token).
+    const fallbackDepositor = process.env.DEPOSITOR_ADDRESS as Address | undefined;
     const escrowBalance = channel
       ? await escrowGetBalance(reads, channel.depositor, channel.token)
-      : 0n;
+      : fallbackDepositor
+        ? await escrowGetBalance(reads, fallbackDepositor, token)
+        : 0n;
 
     return {
       live: true,
@@ -96,6 +104,7 @@ export async function loadChannel(channelId: bigint): Promise<ChannelView> {
       deployment: {
         chainName: chain.name,
         chainId: chain.id,
+        explorer: chain.blockExplorers?.default.url ?? "",
         escrow,
         registry: registryOnEscrow,
         verifier,
@@ -120,6 +129,12 @@ export function formatUnits6(value: bigint): string {
   const whole = value / 1_000_000n;
   const frac = (value % 1_000_000n).toString().padStart(6, "0");
   return `${whole}.${frac}`;
+}
+
+/** Channel ids are full field elements, so they are shown abbreviated. */
+export function shortId(value: bigint | string): string {
+  const text = value.toString();
+  return text.length <= 16 ? text : `${text.slice(0, 8)}…${text.slice(-6)}`;
 }
 
 export function shortAddress(value: string): string {

@@ -1,4 +1,4 @@
-import { formatUnits6, shortAddress, type ChannelView } from "../../app/dashboard/data";
+import { formatUnits6, shortAddress, shortId, type ChannelView } from "../../app/dashboard/data";
 
 const SIGNALS = [
   "channel_id",
@@ -33,7 +33,9 @@ export default function ChannelSummary({ view }: { view: ChannelView }) {
           <dl className="rows">
             <div>
               <dt>Channel</dt>
-              <dd className="is-num">{view.channelId.toString()}</dd>
+              <dd className="is-num" title={view.channelId.toString()}>
+                {shortId(view.channelId)}
+              </dd>
             </div>
             <div>
               <dt>State</dt>
@@ -68,8 +70,16 @@ export default function ChannelSummary({ view }: { view: ChannelView }) {
           </dl>
         ) : (
           <p className="panel__empty">
-            No channel registered under id {view.channelId.toString()}. Open one with{" "}
-            <code>client.openChannel(...)</code>, then reload.
+            {view.channelId === 0n ? (
+              <>
+                No channel open. Start the consumer agent, or enter a channel id above.
+              </>
+            ) : (
+              <>
+                No channel registered under id {shortId(view.channelId)}. Open one with{" "}
+                <code>client.openChannel(...)</code>, then reload.
+              </>
+            )}
           </p>
         )}
       </section>
