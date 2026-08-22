@@ -20,7 +20,7 @@
   "scripts": {
     "build": "tsc -b",
     "generate:abi": "node scripts/generate-abi.mjs",
-    "test": "tsc -b && node --test dist/settlement.test.js dist/abi.test.js dist/env.test.js",
+    "test": "tsc -b && node --test dist/settlement.test.js dist/abi.test.js dist/env.test.js dist/x402.test.js",
     "test:e2e": "tsc -b && node --test dist/anvil.e2e.test.js",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
