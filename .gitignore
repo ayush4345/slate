@@ -6,3 +6,4 @@ broadcast/
 node_modules/
 dist/
 *.tsbuildinfo
+sdk/.cache/
