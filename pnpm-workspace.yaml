@@ -1,0 +1,5 @@
+packages:
+  - sdk
+  - agents/core
+  - agents/provider
+  - agents/consumer
