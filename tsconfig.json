@@ -1,0 +1,8 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/proving-setup" },
+    { "path": "packages/onchain-setup" },
+    { "path": "packages/agent-core" }
+  ]
+}

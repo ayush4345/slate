@@ -1,7 +1,8 @@
 import { getAddress, type Address } from "viem";
 
+import { defaultToken } from "@slate-base/onchain-setup";
+
 import { SlateClientError } from "./client.js";
-import { defaultToken } from "./env.js";
 
 /**
  * x402 terms for a metered channel on Base.

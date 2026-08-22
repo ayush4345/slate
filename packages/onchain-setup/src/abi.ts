@@ -2,7 +2,7 @@ import { parseAbi } from "viem";
 
 /**
  * Contract ABIs, generated from `forge inspect` via
- * `sdk/scripts/generate-abi.mjs`. Regenerating is the only way these stay
+ * `scripts/generate-abi.mjs`. Regenerating is the only way these stay
  * honest — the test in `abi.test.ts` compares them to a fresh inspect.
  *
  * ERC-20 is not one of ours, so it stays as a human-readable fragment.

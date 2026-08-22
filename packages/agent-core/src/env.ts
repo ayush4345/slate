@@ -1,7 +1,9 @@
 import { getAddress, type Address, type Chain } from "viem";
 import { baseSepolia } from "viem/chains";
 
-import { accountFromPrivateKey, CHAINS, SlateClient, SlateClientError } from "./client.js";
+import { CHAINS_BY_ID, DEFAULT_RPC_URLS, defaultToken } from "@slate-base/onchain-setup";
+
+import { accountFromPrivateKey, SlateClient, SlateClientError } from "./client.js";
 
 /** A configured client plus the addresses it binds into every proof. */
 export interface SlateEnvSetup {
@@ -15,31 +17,6 @@ export interface SlateEnvSetup {
   chain: Chain;
   /** Human-readable summary of the bound addresses, for logging. */
   label: string;
-}
-
-/** Chains settlement can run against, keyed by id. Follows `CHAINS`, so a chain
- *  added there is selectable here without a second edit. */
-const CHAINS_BY_ID = new Map<number, Chain>(
-  Object.values(CHAINS).map((chain) => [chain.id, chain]),
-);
-
-/** Anvil advertises no public RPC of its own. */
-const DEFAULT_RPC_URLS: Record<number, string> = {
-  31337: "http://127.0.0.1:8545",
-};
-
-/** Circle USDC. Mirrors the constants in `script/Deploy.s.sol`. */
-export const USDC = {
-  8453: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-  84532: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-} as const satisfies Record<number, Address>;
-
-/**
- * USDC for a chain, where there is one. Anvil's token is deployed per-run, so
- * local runs have to name it.
- */
-export function defaultToken(chainId: number): Address | undefined {
-  return USDC[chainId as keyof typeof USDC];
 }
 
 function required(env: NodeJS.ProcessEnv, name: string): string {
