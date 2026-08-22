@@ -1,0 +1,34 @@
+{
+  "name": "@slate-base/sdk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "generate:abi": "node scripts/generate-abi.mjs",
+    "test": "tsc -b && node --test dist/settlement.test.js dist/abi.test.js dist/env.test.js",
+    "test:e2e": "tsc -b && node --test dist/anvil.e2e.test.js",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "viem": "^2.39.4"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.1",
+    "typescript": "^5.9.2"
+  }
+}
