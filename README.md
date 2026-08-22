@@ -18,6 +18,34 @@ Usage volume and pricing never go on-chain.
 | `src/SignalAddress.sol` | Encodes an EVM address into the circuit's hi/lo field pair. |
 | `sdk/` | TypeScript client, Foundry ABIs, and the read path. |
 
+## Base Sepolia
+
+Chain id `84532`. Deployed with `script/Deploy.s.sol`.
+
+| Contract | Address |
+|---|---|
+| SlateEscrow | [`0xFB41816CEe58999EE95b8597B52518EfBc29d97E`](https://sepolia.basescan.org/address/0xFB41816CEe58999EE95b8597B52518EfBc29d97E) |
+| SlateAgentRegistry | [`0x11aE6A4A0600Da3E384BF39AE63f8Ac73EE59c80`](https://sepolia.basescan.org/address/0x11aE6A4A0600Da3E384BF39AE63f8Ac73EE59c80) |
+| Groth16Verifier | [`0x1BdA2De6DA7c46739f3247b4Aa50418F2d691474`](https://sepolia.basescan.org/address/0x1BdA2De6DA7c46739f3247b4Aa50418F2d691474) |
+| USDC (whitelisted) | [`0x036CbD53842c5426634e7929541eC2318f3dCF7e`](https://sepolia.basescan.org/address/0x036CbD53842c5426634e7929541eC2318f3dCF7e) |
+
+```
+BASE_CHAIN_ID=84532
+BASE_RPC_URL=https://sepolia.base.org
+SLATE_ESCROW_ADDRESS=0xFB41816CEe58999EE95b8597B52518EfBc29d97E
+SLATE_REGISTRY_ADDRESS=0x11aE6A4A0600Da3E384BF39AE63f8Ac73EE59c80
+SETTLEMENT_TOKEN=0x036CbD53842c5426634e7929541eC2318f3dCF7e
+```
+
+Redeploy:
+
+```sh
+forge script script/Deploy.s.sol:Deploy \
+  --rpc-url https://sepolia.base.org \
+  --broadcast \
+  --private-key $EVM_PRIVATE_KEY
+```
+
 ## Regenerating the verifier
 
 The circuit and proving key live with the proving stack; only the generated
