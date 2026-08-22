@@ -8,3 +8,5 @@ dist/
 *.tsbuildinfo
 .cache/
 .next/
+.env.local
+.env.*.local

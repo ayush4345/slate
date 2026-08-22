@@ -11,7 +11,8 @@
     "generate:abi": "pnpm --filter @slate-base/onchain-setup generate:abi",
     "demo": "pnpm --filter @slate-base/agent-consumer demo",
     "serve:provider": "pnpm --filter @slate-base/agent-provider serve",
-    "serve:consumer": "pnpm --filter @slate-base/agent-consumer serve"
+    "serve:consumer": "pnpm --filter @slate-base/agent-consumer serve",
+    "serve:web": "pnpm --filter @slate-base/web dev"
   },
   "devDependencies": {
     "typescript": "^5.9.2"
