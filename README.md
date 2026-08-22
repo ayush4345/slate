@@ -17,6 +17,8 @@ Usage volume and pricing never go on-chain.
 | `src/SlateAgentRegistry.sol` | Pinned channel terms, checked at settlement. |
 | `src/SignalAddress.sol` | Encodes an EVM address into the circuit's hi/lo field pair. |
 | `sdk/` | TypeScript client, Foundry ABIs, and the read path. |
+| `agents/provider/` | Demo provider: weather, crypto price, translation over HTTP. |
+| `agents/consumer/` | Demo consumer: picks tools, meters calls, settles once. |
 
 ## Base Sepolia
 
@@ -102,12 +104,37 @@ forge script script/DeployLocal.s.sol:DeployLocal --rpc-url http://127.0.0.1:854
 whenever a contract's ABI changes — `sdk` tests compare the committed files
 to a fresh inspect.
 
+## Demo agents
+
+A consumer agent buys metered calls from a provider agent (weather,
+crypto price, translation). Usage stays off-chain; one Groth16 proof
+settles the session on Base.
+
+```sh
+pnpm install
+pnpm build
+
+# in-process demo (real APIs, mock chain unless EVM_PRIVATE_KEY is set)
+pnpm demo
+pnpm demo -- "Weather in Tokyo and the price of ETH"
+
+# or two HTTP servers — point the website at :4022
+pnpm serve:provider    # :4021
+pnpm serve:consumer    # :4022   POST /chat  POST /settle  GET /health
+```
+
+The consumer chat API matches the slate demo (`/health`, `/chat`,
+`/settle`, `/session/new`) so the website can talk to it unchanged.
+
 ## Develop
 
 ```sh
 forge build
 forge test
-cd sdk && pnpm test && pnpm test:e2e
+pnpm --filter @slate-base/sdk test && pnpm --filter @slate-base/sdk test:e2e
+pnpm --filter @slate-base/agent-core test
+pnpm --filter @slate-base/agent-provider test
+pnpm --filter @slate-base/agent-consumer test
 ```
 
 `forge lint` reports naming warnings on `src/Verifier.sol`; it is codegen,

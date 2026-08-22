@@ -1,0 +1,40 @@
+{
+  "name": "@slate-base/agent-consumer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "test": "tsc -b && node --test dist/*.test.js",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "demo": "tsx src/demo.ts",
+    "serve": "tsx src/serve.ts"
+  },
+  "dependencies": {
+    "@slate-base/agent-core": "workspace:*",
+    "@slate-base/agent-provider": "workspace:*",
+    "@slate-base/sdk": "workspace:*",
+    "dotenv": "^16.4.5",
+    "express": "^5.1.0"
+  },
+  "optionalDependencies": {
+    "openai": "^4.57.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^26.0.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.2"
+  }
+}

@@ -103,20 +103,8 @@ async function loadProvingSetup(provingRoot: string) {
   }>;
 }
 
-/**
- * Assemble circuit inputs for a channel, then Groth16-prove them.
- *
- * `terms` is what `openChannel` must pin — compute it first, register, then
- * call again with the same arguments to prove. The two calls are deterministic
- * for a fixed `channelSecret` / consumer key.
- */
-export async function proveSettlement(args: ProveArgs): Promise<{
-  settlement: Settlement;
-  terms: BuiltChannelTerms;
-}> {
-  const artifacts = args.artifacts ?? ensureProvingArtifacts();
-  const proving = await loadProvingSetup(artifacts.provingRoot);
-
+async function circuitInputs(args: ProveArgs, provingRoot: string) {
+  const proving = await loadProvingSetup(provingRoot);
   const inputs = await proving.buildSettlementInputs({
     channelId: args.channelId,
     channelSecret: args.channelSecret,
@@ -129,7 +117,6 @@ export async function proveSettlement(args: ProveArgs): Promise<{
     tokenPayload: evmAddressToPayload(args.token),
     consumerPrivateKey: args.consumerPrivateKey,
   });
-
   const terms: BuiltChannelTerms = {
     rateCommitment: BigInt(inputs.rate_commitment),
     consumerPublicKey: {
@@ -139,6 +126,38 @@ export async function proveSettlement(args: ProveArgs): Promise<{
     settlementAmount: BigInt(inputs.settlement_amount),
     nullifier: BigInt(inputs.nullifier),
   };
+  return { proving, inputs, terms };
+}
+
+/**
+ * Poseidon rate commitment + Baby Jubjub pubkey the registry must pin at
+ * open. Same arguments later go to {@link proveSettlement}; the two calls
+ * are deterministic for a fixed `channelSecret` / consumer key.
+ *
+ * Uses `totalUnits = 0` so this is cheap (no Groth16) and still produces
+ * the commitments `openChannel` needs.
+ */
+export async function pinChannelTerms(
+  args: Omit<ProveArgs, "totalUnits">,
+): Promise<BuiltChannelTerms> {
+  const artifacts = args.artifacts ?? ensureProvingArtifacts();
+  const { terms } = await circuitInputs({ ...args, totalUnits: 0n }, artifacts.provingRoot);
+  return terms;
+}
+
+/**
+ * Assemble circuit inputs for a channel, then Groth16-prove them.
+ *
+ * `terms` is what `openChannel` must pin — compute it first with
+ * {@link pinChannelTerms}, register, then call this with the same secrets
+ * and the final metered `totalUnits`.
+ */
+export async function proveSettlement(args: ProveArgs): Promise<{
+  settlement: Settlement;
+  terms: BuiltChannelTerms;
+}> {
+  const artifacts = args.artifacts ?? ensureProvingArtifacts();
+  const { proving, inputs, terms } = await circuitInputs(args, artifacts.provingRoot);
 
   const result = await proving.generateSettlementProof(inputs, {
     wasmPath: artifacts.wasm,
