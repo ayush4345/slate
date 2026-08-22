@@ -84,6 +84,15 @@ export class AgentSession {
     return out;
   }
 
+  /** The channel this session is metering against, once it has opened one. */
+  getChannel(): { channelId?: string; depositor?: string; token?: string } {
+    const out: { channelId?: string; depositor?: string; token?: string } = {};
+    if (this.#terms !== undefined) out.channelId = this.#terms.channelId.toString();
+    if (this.#depositor !== undefined) out.depositor = this.#depositor;
+    if (this.#token !== undefined) out.token = this.#token;
+    return out;
+  }
+
   getPaymentSummary(): TurnPayment {
     return {
       turnCalls: 0,

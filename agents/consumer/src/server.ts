@@ -52,6 +52,7 @@ export function createConsumerServer(deps: ConsumerServerDeps): Express {
         ? "Calls are metered off-chain; one ZK proof settles on Base when the consumer stops."
         : "Mock mode — set EVM_PRIVATE_KEY for on-chain Base settlement.",
       payment: session.getPaymentSummary(),
+      channel: session.getChannel(),
     });
   });
 
