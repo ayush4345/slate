@@ -133,21 +133,43 @@ export function readPaymentHeader(headers: Record<string, unknown>): string | nu
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
+export type VerifyResult =
+  | { ok: true; settlementTx: string }
+  | { ok: false; reason: string };
+
+/**
+ * Checks a payment and, where a facilitator is involved, settles it.
+ *
+ * A resource server answers 402 when payment does not hold up, so every failure
+ * comes back as a reason rather than a thrown error: a malformed header is a
+ * declined payment, not a server fault.
+ */
 export interface PaymentVerifier {
-  verify(header: string, terms: X402Terms): Promise<boolean>;
+  verifyAndSettle(payment: string, terms: X402Terms): Promise<VerifyResult>;
 }
 
-/** Accepts any well-formed header. For offline runs and local chains. */
+/** Accepts any well-formed payment for the advertised network. Offline runs
+ *  and local chains, where no facilitator exists to ask. */
 export class MockPaymentVerifier implements PaymentVerifier {
-  async verify(header: string, terms: X402Terms): Promise<boolean> {
-    const payment = decodePayment(header);
-    return payment.network === terms.network;
+  async verifyAndSettle(payment: string, terms: X402Terms): Promise<VerifyResult> {
+    let decoded: PaymentPayload;
+    try {
+      decoded = decodePayment(payment);
+    } catch (error) {
+      return { ok: false, reason: error instanceof Error ? error.message : "malformed-payment" };
+    }
+    if (decoded.network !== terms.network) {
+      return { ok: false, reason: `payment is for ${decoded.network}, terms are ${terms.network}` };
+    }
+    const digest = Buffer.from(decoded.payload.authorization).toString("hex").slice(0, 12);
+    return { ok: true, settlementTx: `mock_settle_${digest}` };
   }
 }
 
 /**
- * Defers to an x402 facilitator's `/verify`. Coinbase runs one for Base; the
- * URL is the only thing that changes between it and any other.
+ * Defers to an x402 facilitator: `/verify` decides, `/settle` moves the money.
+ * Coinbase runs one for Base; the URL is the only thing that changes between it
+ * and any other.
  */
 export class FacilitatorPaymentVerifier implements PaymentVerifier {
   constructor(
@@ -155,21 +177,46 @@ export class FacilitatorPaymentVerifier implements PaymentVerifier {
     private readonly fetchImpl: typeof fetch = fetch,
   ) {}
 
-  async verify(header: string, terms: X402Terms): Promise<boolean> {
-    const response = await this.fetchImpl(`${this.url.replace(/\/$/, "")}/verify`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        x402Version: 1,
-        paymentPayload: decodePayment(header),
-        paymentRequirements: terms,
-      }),
-    });
-    if (!response.ok) {
-      throw new SlateClientError(`facilitator ${this.url} answered ${response.status}`);
+  async verifyAndSettle(payment: string, terms: X402Terms): Promise<VerifyResult> {
+    let paymentPayload: PaymentPayload;
+    try {
+      paymentPayload = decodePayment(payment);
+    } catch (error) {
+      return { ok: false, reason: error instanceof Error ? error.message : "malformed-payment" };
     }
-    const body = (await response.json()) as { isValid?: boolean };
-    return body.isValid === true;
+
+    const base = this.url.replace(/\/$/, "");
+    const body = JSON.stringify({ x402Version: 1, paymentPayload, paymentRequirements: terms });
+    const post = (path: string) =>
+      this.fetchImpl(`${base}${path}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body,
+      });
+
+    try {
+      const verifyRes = await post("/verify");
+      const verify = (await verifyRes.json().catch(() => ({}))) as {
+        isValid?: boolean;
+        invalidReason?: string;
+      };
+      if (!verifyRes.ok || verify.isValid !== true) {
+        return { ok: false, reason: verify.invalidReason ?? `verify-failed-${verifyRes.status}` };
+      }
+
+      const settleRes = await post("/settle");
+      const settle = (await settleRes.json().catch(() => ({}))) as {
+        success?: boolean;
+        txHash?: string;
+        errorReason?: string;
+      };
+      if (!settleRes.ok || settle.success !== true) {
+        return { ok: false, reason: settle.errorReason ?? `settle-failed-${settleRes.status}` };
+      }
+      return { ok: true, settlementTx: settle.txHash ?? "settled" };
+    } catch (error) {
+      return { ok: false, reason: `facilitator-unreachable: ${(error as Error).message}` };
+    }
   }
 }
 

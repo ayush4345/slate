@@ -3,9 +3,15 @@ import type { Express } from "express";
 import { parseUnits } from "@slate-base/agent-core";
 import type { ToolboxService, ToolCall } from "@slate-base/agent-core";
 import type { ProviderServerConfig } from "./config.js";
-import { build402Response, buildPaymentRequirements, readPaymentHeader } from "./x402.js";
-import { createPaymentVerifier } from "./payments.js";
-import type { PaymentVerifier } from "./payments.js";
+import {
+  build402Body,
+  buildTerms,
+  FacilitatorPaymentVerifier,
+  DEFAULT_FACILITATOR_URL,
+  MockPaymentVerifier,
+  readPaymentHeader,
+  type PaymentVerifier,
+} from "@slate-base/agent-core";
 import { ChannelRegistry } from "./channels.js";
 import { TOOL_SPECS } from "./tools.js";
 
@@ -27,9 +33,14 @@ export interface ProviderServerDeps {
  */
 export function createProviderServer(deps: ProviderServerDeps): Express {
   const { config, toolbox } = deps;
-  const verifier = deps.verifier ?? createPaymentVerifier(config);
+  const terms = buildTerms(config.terms);
+  const verifier =
+    deps.verifier ??
+    (config.mockX402
+      ? new MockPaymentVerifier()
+      : new FacilitatorPaymentVerifier(config.facilitatorUrl ?? DEFAULT_FACILITATOR_URL));
   const registry = deps.registry ?? new ChannelRegistry();
-  const rate = parseUnits(config.rate);
+  const rate = parseUnits(terms.rate);
 
   const app = express();
   app.use(express.json({ limit: "1mb" }));
@@ -38,7 +49,7 @@ export function createProviderServer(deps: ProviderServerDeps): Express {
     res.json({
       name: "slate-provider",
       description: "Metered multi-tool provider, settled via Slate ZK payment channels on Base.",
-      x402: { open: "/agent/open", requirements: buildPaymentRequirements(config) },
+      x402: { open: "/agent/open", requirements: terms },
       tools: TOOL_SPECS,
     });
   });
@@ -46,13 +57,15 @@ export function createProviderServer(deps: ProviderServerDeps): Express {
   app.post("/agent/open", async (req, res) => {
     const payment = readPaymentHeader(req.headers as Record<string, unknown>);
     if (payment === null) {
-      res.status(402).json(build402Response(config));
+      res.status(402).json(build402Body(config.terms));
       return;
     }
 
-    const verified = await verifier.verifyAndSettle(payment, buildPaymentRequirements(config));
+    const verified = await verifier.verifyAndSettle(payment, terms);
     if (!verified.ok) {
-      res.status(402).json({ ...build402Response(config), error: `payment rejected: ${verified.reason}` });
+      res
+        .status(402)
+        .json({ ...build402Body(config.terms), error: `payment rejected: ${verified.reason}` });
       return;
     }
 
@@ -70,9 +83,9 @@ export function createProviderServer(deps: ProviderServerDeps): Express {
     res.json({
       ok: true,
       channelId: body.channelId,
-      rate: config.rate,
-      payTo: config.payTo,
-      asset: config.asset,
+      rate: terms.rate,
+      payTo: terms.payTo,
+      asset: terms.asset,
       settlementTx: verified.settlementTx,
     });
   });

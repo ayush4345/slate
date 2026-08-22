@@ -1,5 +1,6 @@
 import type { CallOutcome, CloseResult, MeteredServiceChannel } from "./channel.js";
 import type { ToolCall, ToolResult } from "./toolbox.js";
+import { encodePayment, type X402Network } from "./x402.js";
 
 /** Terms the provider advertised in its 402 Payment Required body. */
 export interface ProviderTerms {
@@ -13,7 +14,8 @@ export interface RemoteOpenInput {
   providerUrl: string;
   channelId: bigint;
   escrow: bigint;
-  /** Mock (or real) x402 payment proof. */
+  /** The authorization the provider's verifier checks. Wrapped in an x402
+   *  envelope before it is sent; callers pass the proof, not the header. */
   payment: string;
   consumerPublicKey?: { x: bigint; y: bigint };
 }
@@ -64,7 +66,12 @@ export class RemoteChannel implements MeteredServiceChannel<ToolCall, ToolResult
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "X-PAYMENT": input.payment,
+        "X-PAYMENT": encodePayment({
+          x402Version: 1,
+          scheme: "exact",
+          network: advertised.network as X402Network,
+          payload: { authorization: input.payment },
+        }),
       },
       body: JSON.stringify({
         channelId: input.channelId.toString(),

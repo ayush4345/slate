@@ -10,6 +10,7 @@ import {
   type WalletClient,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
+import { nonceManager } from "viem/utils";
 import { baseSepolia } from "viem/chains";
 
 import {
@@ -238,20 +239,62 @@ export class SlateClient {
       account: this.account,
     });
 
-    const hash = await this.walletClient.writeContract(request as never);
+    const hash = await this.write(request, functionName);
     const receipt = await this.publicClient.waitForTransactionReceipt({ hash });
     if (receipt.status !== "success") {
       throw new SlateClientError(`${functionName} reverted (tx ${hash})`);
     }
     return hash;
   }
+
+  /**
+   * Send, and retry once if the node says the nonce is stale.
+   *
+   * Public endpoints are load-balanced across nodes that disagree about an
+   * account's transaction count, so the count we signed with can be behind the
+   * one the chain enforces. Re-reading it is what produced the bad value, but
+   * the rejection names the nonce the chain wants, so the retry uses that.
+   */
+  private async write(request: unknown, functionName: string): Promise<Hex> {
+    try {
+      return await this.walletClient.writeContract(request as never);
+    } catch (error) {
+      const expected = expectedNonce(error);
+      if (expected === undefined) throw error;
+
+      nonceManager.reset({ address: this.account.address, chainId: this.chain.id });
+      try {
+        return await this.walletClient.writeContract({ ...(request as object), nonce: expected } as never);
+      } catch (retryError) {
+        throw new SlateClientError(
+          `${functionName} failed twice on nonce (tried ${expected}): ` +
+            (retryError instanceof Error ? retryError.message.split("\n")[0] : String(retryError)),
+        );
+      }
+    }
+  }
 }
 
-/** Build a signing account from a `0x…` private key. */
+/** The nonce a `nonce too low` rejection says the chain is expecting. */
+function expectedNonce(error: unknown): number | undefined {
+  const message = error instanceof Error ? error.message : String(error);
+  const match = /next nonce (\d+)/i.exec(message);
+  return match ? Number(match[1]) : undefined;
+}
+
+/**
+ * Build a signing account from a `0x…` private key.
+ *
+ * Nonces are tracked locally. Opening a channel is three transactions in a row,
+ * and public RPC endpoints are load-balanced across nodes that do not always
+ * agree on the account's transaction count: re-reading it per transaction can
+ * hand back a stale value and the send fails with `nonce too low`. Reading once
+ * and counting up avoids asking a second time.
+ */
 export function accountFromPrivateKey(privateKey: string): Account {
   const key = privateKey.startsWith("0x") ? privateKey : `0x${privateKey}`;
   if (!/^0x[0-9a-fA-F]{64}$/.test(key)) {
     throw new SlateClientError("private key must be 32 bytes of hex");
   }
-  return privateKeyToAccount(key as Hex);
+  return privateKeyToAccount(key as Hex, { nonceManager });
 }
