@@ -1,4 +1,5 @@
 import Nav from "../../components/Nav";
+import AgentConsole from "../../components/dashboard/AgentConsole";
 import ChannelSummary from "../../components/dashboard/ChannelSummary";
 import { loadChannel } from "./data";
 import "./dashboard.css";
@@ -52,6 +53,10 @@ export default async function DashboardPage({
               <b>Sample data.</b> {view.note}
             </p>
           )}
+
+          <div className="dash__grid">
+            <AgentConsole />
+          </div>
 
           <ChannelSummary view={view} />
         </div>
