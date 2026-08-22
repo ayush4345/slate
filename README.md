@@ -16,7 +16,7 @@ Usage volume and pricing never go on-chain.
 | `src/SlateEscrow.sol` | Escrow: deposit → verify proof → check nullifier → pay out. |
 | `src/SlateAgentRegistry.sol` | Pinned channel terms, checked at settlement. |
 | `src/SignalAddress.sol` | Encodes an EVM address into the circuit's hi/lo field pair. |
-| `sdk/` | TypeScript client, Foundry ABIs, and the read path. |
+| `sdk/` | TypeScript client, Foundry ABIs, the read path, and x402 terms. |
 
 ## Regenerating the verifier
 
@@ -66,6 +66,15 @@ forge script script/DeployLocal.s.sol:DeployLocal --rpc-url http://127.0.0.1:854
 `forge inspect` (`pnpm generate:abi` in `sdk/`). Regenerating is required
 whenever a contract's ABI changes — `sdk` tests compare the committed files
 to a fresh inspect.
+
+## x402
+
+`sdk/src/x402.ts` builds the `402` a provider answers with, and the `X-PAYMENT`
+header a consumer retries with. Payment verification is a seam:
+`MockPaymentVerifier` by default, `FacilitatorPaymentVerifier` against a real
+facilitator when `MOCK_X402=false`.
+
+Anvil has no facilitator, so local runs stay on the mock.
 
 ## Develop
 
