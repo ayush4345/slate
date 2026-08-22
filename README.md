@@ -46,11 +46,18 @@ it.
 
 ## Local anvil
 
-Partial end-to-end: deploy, open a channel, exercise the read path. It does not
-prove a real settlement — that is the full loop.
+`cd sdk && pnpm test:e2e` spawns anvil and runs two loops:
 
-The SDK e2e (`cd sdk && pnpm test:e2e`) spawns its own anvil. To poke at a
-node by hand instead:
+1. Deploy the committed contracts, open a channel, exercise the read path.
+2. Build a local proving key from the settlement r1cs, deploy a matching
+   verifier, then open → meter → prove → settle.
+
+The committed `Verifier.sol` was generated from `settlement_final.zkey`, which
+is not in git. The full loop therefore uses a local key in `sdk/.cache/`
+(`pnpm prove:setup`) so proving does not depend on a missing artifact. It does
+not replace the committed verifier.
+
+To poke at a node by hand instead:
 
 ```sh
 anvil
