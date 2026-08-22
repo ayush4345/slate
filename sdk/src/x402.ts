@@ -1,6 +1,7 @@
 import { getAddress, type Address } from "viem";
 
 import { SlateClientError } from "./client.js";
+import { defaultToken } from "./env.js";
 
 /**
  * x402 terms for a metered channel on Base.
@@ -177,11 +178,19 @@ export const DEFAULT_FACILITATOR_URL = "https://x402.org/facilitator";
 /**
  * Read the provider's advertised terms from the environment.
  *
- * `asset` and `payTo` have no safe default — an unset payee would advertise
- * somewhere the escrow will not pay — so both are required.
+ * `payTo` has no safe default: an unset payee would advertise somewhere the
+ * escrow will not pay. `asset` falls back to USDC for the chain.
  *
  * Env: `X402_ASSET`, `X402_PAY_TO`, `RATE`, `X402_MAX_AMOUNT`, `X402_NETWORK`.
  */
+function requireDefaultToken(chainId: number): Address {
+  const token = defaultToken(chainId);
+  if (!token) {
+    throw new SlateClientError(`X402_ASSET is required on chain ${chainId}: no USDC default`);
+  }
+  return token;
+}
+
 export function x402ConfigFromEnv(chainId: number, env: NodeJS.ProcessEnv = process.env): X402Config {
   const address = (name: string): Address => {
     const raw = env[name];
@@ -200,7 +209,7 @@ export function x402ConfigFromEnv(chainId: number, env: NodeJS.ProcessEnv = proc
 
   return {
     network,
-    asset: address("X402_ASSET"),
+    asset: env.X402_ASSET ? address("X402_ASSET") : requireDefaultToken(chainId),
     payTo: address("X402_PAY_TO"),
     rate: env.RATE ?? "0.0001",
     maxAmount: BigInt(env.X402_MAX_AMOUNT ?? "100000000"),

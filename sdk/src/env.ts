@@ -28,19 +28,36 @@ const DEFAULT_RPC_URLS: Record<number, string> = {
   31337: "http://127.0.0.1:8545",
 };
 
+/** Circle USDC. Mirrors the constants in `script/Deploy.s.sol`. */
+export const USDC = {
+  8453: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  84532: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+} as const satisfies Record<number, Address>;
+
+/**
+ * USDC for a chain, where there is one. Anvil's token is deployed per-run, so
+ * local runs have to name it.
+ */
+export function defaultToken(chainId: number): Address | undefined {
+  return USDC[chainId as keyof typeof USDC];
+}
+
 function required(env: NodeJS.ProcessEnv, name: string): string {
   const value = env[name];
   if (!value) throw new SlateClientError(`${name} is required once EVM_PRIVATE_KEY is set`);
   return value;
 }
 
-function address(env: NodeJS.ProcessEnv, name: string): Address {
-  const raw = required(env, name);
+function parseAddress(raw: string, name: string): Address {
   try {
     return getAddress(raw);
   } catch {
     throw new SlateClientError(`${name} must be a 20-byte address, received "${raw}"`);
   }
+}
+
+function address(env: NodeJS.ProcessEnv, name: string): Address {
+  return parseAddress(required(env, name), name);
 }
 
 /**
@@ -54,7 +71,8 @@ function address(env: NodeJS.ProcessEnv, name: string): Address {
  * Env:
  *  - `EVM_PRIVATE_KEY`          32-byte hex key that funds escrow and signs.
  *  - `SLATE_ESCROW_ADDRESS`, `SLATE_REGISTRY_ADDRESS`   deployed contracts.
- *  - `SETTLEMENT_TOKEN` ERC-20 to settle in (whitelisted on the escrow).
+ *  - `SETTLEMENT_TOKEN`         ERC-20 to settle in (whitelisted on the escrow).
+ *                               Defaults to USDC on Base and Base Sepolia.
  *  - `PROVIDER_ADDRESS`         payout address; defaults to the depositor.
  *  - `BASE_CHAIN_ID`            8453, 84532 (default), or 31337 for anvil.
  *  - `BASE_RPC_URL`             defaults to the chain's public RPC.
@@ -79,7 +97,12 @@ export function slateClientFromEnv(env: NodeJS.ProcessEnv = process.env): SlateE
   const account = accountFromPrivateKey(privateKey);
   const depositor = account.address;
   const provider = env.PROVIDER_ADDRESS ? address(env, "PROVIDER_ADDRESS") : depositor;
-  const token = address(env, "SETTLEMENT_TOKEN");
+  const token = env.SETTLEMENT_TOKEN
+    ? address(env, "SETTLEMENT_TOKEN")
+    : defaultToken(chain.id);
+  if (!token) {
+    throw new SlateClientError(`SETTLEMENT_TOKEN is required on chain ${chain.id}: no USDC default`);
+  }
 
   const client = new SlateClient({
     rpcUrl,

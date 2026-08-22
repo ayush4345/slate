@@ -170,10 +170,11 @@ test("discoverTerms reads accepts[0], or null when not gated", async () => {
 });
 
 test("advertised terms come from the environment, and the payee is required", () => {
-  const env = { X402_ASSET: USDC, X402_PAY_TO: PAY_TO } as NodeJS.ProcessEnv;
+  const env = { X402_PAY_TO: PAY_TO } as NodeJS.ProcessEnv;
   const fromEnv = x402ConfigFromEnv(84532, env);
   assert.equal(fromEnv.network, "base-sepolia");
   assert.equal(fromEnv.payTo, PAY_TO);
+  assert.equal(fromEnv.asset, USDC, "defaults to USDC on Base Sepolia");
   assert.equal(fromEnv.maxAmount, 100_000_000n);
 
   assert.throws(() => x402ConfigFromEnv(84532, { X402_ASSET: USDC }), /X402_PAY_TO is required/);
