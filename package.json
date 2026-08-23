@@ -1,18 +1,18 @@
 {
-  "name": "slate-base",
+  "name": "avtar",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -b && pnpm --filter @slate-base/agent-provider build && pnpm --filter @slate-base/agent-consumer build && pnpm --filter @slate-base/web build",
+    "build": "tsc -b && pnpm --filter @avtar/agent-provider build && pnpm --filter @avtar/agent-consumer build && pnpm --filter @avtar/web build",
     "clean": "tsc -b --clean",
     "test": "tsc -b && pnpm -r --no-bail test",
-    "test:e2e": "pnpm --filter @slate-base/agent-core test:e2e",
-    "generate:abi": "pnpm --filter @slate-base/onchain-setup generate:abi",
-    "demo": "pnpm --filter @slate-base/agent-consumer demo",
-    "serve:provider": "pnpm --filter @slate-base/agent-provider serve",
-    "serve:consumer": "pnpm --filter @slate-base/agent-consumer serve",
-    "serve:web": "pnpm --filter @slate-base/web dev"
+    "test:e2e": "pnpm --filter @avtar/agent-core test:e2e",
+    "generate:abi": "pnpm --filter @avtar/onchain-setup generate:abi",
+    "demo": "pnpm --filter @avtar/agent-consumer demo",
+    "serve:provider": "pnpm --filter @avtar/agent-provider serve",
+    "serve:consumer": "pnpm --filter @avtar/agent-consumer serve",
+    "serve:web": "pnpm --filter @avtar/web dev"
   },
   "devDependencies": {
     "typescript": "^5.9.2"

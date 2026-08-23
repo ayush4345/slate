@@ -1,4 +1,4 @@
-// pnpm --filter @slate-base/agent-provider serve
+// pnpm --filter @avtar/agent-provider serve
 // Env: PORT, RATE, X402_NETWORK, X402_ASSET, X402_PAY_TO, X402_MAX_AMOUNT,
 //      MOCK_X402 (default true), X402_FACILITATOR_URL.
 import { dirname, resolve } from "node:path";
@@ -17,7 +17,7 @@ const toolbox = buildToolbox(new FetchHttpClient());
 const app = createProviderServer({ config, toolbox });
 
 app.listen(config.port, () => {
-  console.log(`slate-base provider listening on http://localhost:${config.port}`);
+  console.log(`avtar.ai provider listening on http://localhost:${config.port}`);
   console.log(`  payment mode:  ${config.mockX402 ? "MOCK verifier" : `facilitator @ ${config.facilitatorUrl ?? "default"}`}`);
   console.log(`  network/asset: ${config.terms.network}  ${config.terms.asset}`);
   console.log(`  payTo / rate:  ${config.terms.payTo}  ${config.terms.rate}`);

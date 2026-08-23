@@ -1,4 +1,4 @@
-/* Slate on Base — instrument-on-paper.
+/* avtar.ai on Base — instrument-on-paper.
    Committed ultramarine on cool paper. The meter is the product, so the page
    is built like a measuring instrument: ruled lines, tabular numerals, and a
    single saturated ink doing the heavy lifting. */
@@ -283,6 +283,44 @@ p { margin: 0; text-wrap: pretty; }
 }
 .tape__settle b { color: var(--on-ink); font-weight: 500; }
 
+/* The one interactive thing on the page: settling is the argument, so it is
+   worth letting a reader run it rather than describing it. */
+.tape__btn {
+  font: inherit;
+  font-size: 0.8125rem;
+  color: var(--on-ink);
+  background: transparent;
+  border: 1px solid var(--rule-ink);
+  border-radius: 4px;
+  padding: 0.25rem 0.625rem;
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease), background-color 0.15s var(--ease);
+}
+.tape__btn:hover { border-color: var(--brand-on-ink); background: oklch(0.32 0.055 264); }
+
+.tape__steps { margin-top: 1rem; padding-top: 0.875rem; border-top: 1px solid var(--rule-ink); }
+.tape__steps ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-height: 6.25rem;
+  display: grid;
+  align-content: start;
+  gap: 0.125rem;
+}
+.tape__steps li {
+  color: var(--on-ink-mute);
+  animation: tape-in 0.35s var(--ease) both;
+}
+.tape__steps li::before { content: "· "; color: var(--brand-on-ink); }
+
+.tape__pay { display: flex; justify-content: space-between; gap: 1rem; color: var(--on-ink-mute); }
+.tape__pay b { font-weight: 500; color: var(--meter); }
+
+@media (prefers-reduced-motion: reduce) {
+  .tape__steps ol { min-height: 0; }
+}
+
 /* ─── section frame ───────────────────────────────────────────────────── */
 
 .band { padding-block: clamp(4rem, 8vw, 6.5rem); border-top: 1px solid var(--rule); }
@@ -439,39 +477,6 @@ p { margin: 0; text-wrap: pretty; }
   padding: 0.1em 0.35em;
   border-radius: 3px;
 }
-
-/* ─── quickstart ──────────────────────────────────────────────────────── */
-
-.start__grid {
-  margin-top: clamp(2rem, 4vw, 3rem);
-  display: grid;
-  gap: 1.5rem;
-  /* install, open, settle read as one left-to-right sequence when they fit. */
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
-}
-
-.snippet { display: flex; flex-direction: column; min-width: 0; }
-.snippet h3 {
-  font-family: var(--mono);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--on-paper-mute);
-  padding-bottom: 0.625rem;
-  border-bottom: 1px solid var(--rule-firm);
-}
-.snippet pre {
-  margin: 0;
-  padding: 1rem 0 0;
-  overflow-x: auto;
-  font-family: var(--mono);
-  font-size: 0.8125rem;
-  line-height: 1.7;
-  tab-size: 2;
-}
-.snippet code { font: inherit; }
-.snippet .c { color: var(--on-paper-mute); }
-.snippet .k { color: var(--brand); }
-.snippet .s { color: var(--meter-ink); }
 
 /* ─── footer ──────────────────────────────────────────────────────────── */
 

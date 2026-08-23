@@ -18,7 +18,7 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Slate on Base: meter off-chain, settle once",
+  title: "avtar.ai on Base: meter off-chain, settle once",
   description:
     "Agents meter API calls against an escrowed balance and close the channel in one transaction. A Groth16 proof establishes what is owed; call volume and pricing never go on chain.",
 };

@@ -7,8 +7,8 @@ export default function Nav({ variant = "site" }: { variant?: "site" | "app" }) 
     <header className="nav">
       <div className="shell nav__row">
         <Link className="wordmark" href="/">
-          <b>slate</b>
-          <span>/base</span>
+          <b>avtar</b>
+          <span>.ai</span>
         </Link>
         <nav className="nav__links" aria-label="Sections">
           {variant === "site" ? (
@@ -20,7 +20,6 @@ export default function Nav({ variant = "site" }: { variant?: "site" | "app" }) 
               <a href="#guarantees" data-secondary>
                 Guarantees
               </a>
-              <a href="#start">Quickstart</a>
               <Link href="/dashboard">Dashboard</Link>
             </>
           ) : (

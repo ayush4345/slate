@@ -4,7 +4,7 @@ pragma solidity ^0.8.28;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {SlateAgentRegistry} from "./SlateAgentRegistry.sol";
+import {AvtarAgentRegistry} from "./AvtarAgentRegistry.sol";
 
 interface IGroth16Verifier {
     function verifyProof(
@@ -15,7 +15,7 @@ interface IGroth16Verifier {
     ) external view returns (bool);
 }
 
-/// @title SlateEscrow
+/// @title AvtarEscrow
 /// @notice Holds a depositor's escrow for a metered payment channel and pays it
 /// out against a single ZK settlement proof.
 ///
@@ -24,7 +24,7 @@ interface IGroth16Verifier {
 /// owed was derived correctly from the agreed rate. The escrow pays the
 /// provider that amount and refunds the balance to the depositor.
 ///
-contract SlateEscrow is Ownable {
+contract AvtarEscrow is Ownable {
     using SafeERC20 for IERC20;
 
     uint256 internal constant N_PUBLIC = 13;
@@ -133,7 +133,7 @@ contract SlateEscrow is Ownable {
         // from the caller instead would let whoever submits the proof nominate
         // the payee.
         (address depositor, address provider, address token) =
-            SlateAgentRegistry(registry).validateForSettlement(channelId, publicSignals);
+            AvtarAgentRegistry(registry).validateForSettlement(channelId, publicSignals);
 
         if (!whitelisted[token]) revert TokenNotWhitelisted();
         if (!IGroth16Verifier(verifier).verifyProof(a, b, c, publicSignals)) revert InvalidProof();

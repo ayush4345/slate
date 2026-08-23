@@ -1,6 +1,6 @@
-import type { ToolResult } from "@slate-base/agent-core";
+import type { ToolResult } from "@avtar/agent-core";
 import type { AgentBrain, AgentDecision } from "./agent.js";
-import type { ToolSpec } from "@slate-base/agent-provider";
+import type { ToolSpec } from "@avtar/agent-provider";
 
 const COINS: Record<string, string> = {
   btc: "bitcoin", bitcoin: "bitcoin", eth: "ethereum", ethereum: "ethereum",
@@ -22,6 +22,16 @@ export class StubAgentBrain implements AgentBrain {
     if (gathered.length > 0) {
       const parts = gathered.map((g) => formatToolResult(g.tool, g.result));
       return { answer: parts.join("\n\n") };
+    }
+
+    if (goal.trim().toLowerCase().startsWith("preflight")) {
+      const preflight = parsePreflight(goal);
+      return preflight === null
+        ? {
+          answer:
+            "Invalid preflight command. Use: preflight <from-address> <to-address> [calldata-hex] [value-wei]",
+        }
+        : { calls: [{ tool: "preflight_base_transaction", args: preflight }] };
     }
 
     const g = goal.toLowerCase();
@@ -49,6 +59,27 @@ export class StubAgentBrain implements AgentBrain {
     if (calls.length === 0) calls.push({ tool: "get_weather", args: { location: "London" } });
     return { calls };
   }
+}
+
+function parsePreflight(goal: string): Record<string, unknown> | null {
+  const parts = goal.trim().split(/\s+/);
+  if (parts.length < 3 || parts.length > 5 || parts[0]?.toLowerCase() !== "preflight") return null;
+
+  const [, from, to, data = "0x", value = "0"] = parts;
+  const address = /^0x[0-9a-fA-F]{40}$/;
+  const calldata = /^0x(?:[0-9a-fA-F]{2})*$/;
+  if (
+    from === undefined
+    || to === undefined
+    || !address.test(from)
+    || !address.test(to)
+    || !calldata.test(data)
+    || !/^\d+$/.test(value)
+  ) {
+    return null;
+  }
+
+  return { chainId: 84532, from, to, data, value };
 }
 
 function parseTranslation(goal: string): { text: string; to: string } | null {

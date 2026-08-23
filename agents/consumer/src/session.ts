@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import {
   MockChainClient,
+  type MeteredServiceChannel,
   parseUnits,
   pinChannelTerms,
   proveSettlement,
@@ -10,10 +11,12 @@ import {
   type ChainClient,
   type ChannelTerms,
   type ProviderTerms,
-} from "@slate-base/agent-core";
-import { TOOL_SPECS } from "@slate-base/agent-provider";
+  type ToolCall,
+  type ToolResult,
+} from "@avtar/agent-core";
+import { TOOL_SPECS } from "@avtar/agent-provider";
 import { ServiceAgent } from "./agent.js";
-import type { AgentRunResult, ProviderSettlement, TurnPayment } from "./agent.js";
+import type { AgentBrain, AgentRunResult, ProviderSettlement, TurnPayment } from "./agent.js";
 import { StubAgentBrain } from "./stub-agent.js";
 import { OpenAiAgentBrain } from "./openai-agent.js";
 import type { ConsumerServerConfig } from "./config.js";
@@ -24,6 +27,11 @@ function randField(): bigint {
 }
 
 type ToolStats = { sessionCalls: number; sessionBillable: bigint };
+
+export interface AgentSessionDependencies {
+  channel?: MeteredServiceChannel<ToolCall, ToolResult>;
+  brain?: AgentBrain;
+}
 
 export interface ChatResult extends AgentRunResult {
   payment: TurnPayment;
@@ -54,7 +62,7 @@ export interface SettleOutcome {
  * settles once with a Groth16 proof.
  */
 export class AgentSession {
-  #channel: RemoteChannel | undefined;
+  #channel: MeteredServiceChannel<ToolCall, ToolResult> | undefined;
   #chain: ChainClient | undefined;
   #terms: ChannelTerms | undefined;
   #advertised: ProviderTerms | undefined;
@@ -68,7 +76,10 @@ export class AgentSession {
   #byTool = new Map<string, ToolStats>();
   #tokenSymbol: string;
 
-  constructor(private readonly config: ConsumerServerConfig) {
+  constructor(
+    private readonly config: ConsumerServerConfig,
+    private readonly dependencies: AgentSessionDependencies = {},
+  ) {
     this.#tokenSymbol = process.env.SETTLEMENT_TOKEN_SYMBOL ?? "USDC";
   }
 
@@ -105,6 +116,15 @@ export class AgentSession {
   }
 
   async initialize(): Promise<void> {
+    if (this.dependencies.channel !== undefined) {
+      this.#channel = this.dependencies.channel;
+      this.#sessionBillable = 0n;
+      this.#sessionCalls = 0;
+      this.#byTool.clear();
+      this.#ready = true;
+      return;
+    }
+
     const escrow = parseUnits(this.config.escrow);
     const real = realChainFromEnv();
     const chain: ChainClient = real?.chain ?? new MockChainClient();
@@ -192,33 +212,30 @@ export class AgentSession {
     this.#busy = true;
     try {
       const useOpenAi = Boolean(process.env.OPENAI_API_KEY);
-      const brain = useOpenAi ? new OpenAiAgentBrain() : new StubAgentBrain();
+      const brain = this.dependencies.brain ?? (useOpenAi ? new OpenAiAgentBrain() : new StubAgentBrain());
       const result = await new ServiceAgent(this.#channel, brain, TOOL_SPECS).run(message.trim());
 
       const served = result.calls.filter((c) => c.served);
-      const rate = this.#terms?.rate ?? 0n;
-      const turnCounts = new Map<string, number>();
+      const rate = this.#channel.rate;
+      const turnStats = new Map<string, ToolStats>();
 
       for (const call of served) {
-        turnCounts.set(call.tool, (turnCounts.get(call.tool) ?? 0) + 1);
+        const cost = call.cost ?? 0n;
+        const turn = turnStats.get(call.tool) ?? { sessionCalls: 0, sessionBillable: 0n };
+        turn.sessionCalls += 1;
+        turn.sessionBillable += cost * rate;
+        turnStats.set(call.tool, turn);
+
         const prev = this.#byTool.get(call.tool) ?? { sessionCalls: 0, sessionBillable: 0n };
         prev.sessionCalls += 1;
-        prev.sessionBillable += rate;
+        prev.sessionBillable += cost * rate;
         this.#byTool.set(call.tool, prev);
       }
 
       const turnCalls = served.length;
-      const lastBillable = served.at(-1)?.billable;
-      const turnBillable =
-        lastBillable !== undefined
-          ? BigInt(lastBillable) - this.#sessionBillable
-          : BigInt(turnCalls) * rate;
-
-      if (lastBillable !== undefined) {
-        this.#sessionBillable = BigInt(lastBillable);
-      } else {
-        this.#sessionBillable += turnBillable;
-      }
+      const turnBillable = [...turnStats.values()]
+        .reduce((total, stats) => total + stats.sessionBillable, 0n);
+      this.#sessionBillable += turnBillable;
       this.#sessionCalls += turnCalls;
 
       return {
@@ -229,7 +246,7 @@ export class AgentSession {
           sessionCalls: this.#sessionCalls,
           sessionBillable: this.#sessionBillable.toString(),
           tokenSymbol: this.#tokenSymbol,
-          providers: this.#buildProviderSettlements(turnCounts),
+          providers: this.#buildProviderSettlements(turnStats),
         },
       };
     } finally {
@@ -349,18 +366,17 @@ export class AgentSession {
     await this.settle();
   }
 
-  #buildProviderSettlements(turnCounts: Map<string, number>): ProviderSettlement[] {
-    const rate = this.#terms?.rate ?? 0n;
+  #buildProviderSettlements(turnStats: Map<string, ToolStats>): ProviderSettlement[] {
     const providers: ProviderSettlement[] = [];
     for (const [tool, meta] of Object.entries(TOOL_PROVIDERS)) {
-      const turnCalls = turnCounts.get(tool) ?? 0;
+      const turn = turnStats.get(tool) ?? { sessionCalls: 0, sessionBillable: 0n };
       const stats = this.#byTool.get(tool) ?? { sessionCalls: 0, sessionBillable: 0n };
       providers.push({
         providerId: meta.id,
         providerLabel: meta.label,
         tool,
-        turnCalls,
-        turnBillable: (BigInt(turnCalls) * rate).toString(),
+        turnCalls: turn.sessionCalls,
+        turnBillable: turn.sessionBillable.toString(),
         sessionCalls: stats.sessionCalls,
         sessionBillable: stats.sessionBillable.toString(),
       });

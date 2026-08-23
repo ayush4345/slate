@@ -1,7 +1,7 @@
 import express from "express";
 import type { Express } from "express";
-import { parseUnits } from "@slate-base/agent-core";
-import type { ToolboxService, ToolCall } from "@slate-base/agent-core";
+import { parseUnits } from "@avtar/agent-core";
+import type { ToolboxService, ToolCall } from "@avtar/agent-core";
 import type { ProviderServerConfig } from "./config.js";
 import {
   build402Body,
@@ -11,7 +11,7 @@ import {
   MockPaymentVerifier,
   readPaymentHeader,
   type PaymentVerifier,
-} from "@slate-base/agent-core";
+} from "@avtar/agent-core";
 import { ChannelRegistry } from "./channels.js";
 import { TOOL_SPECS } from "./tools.js";
 
@@ -47,8 +47,8 @@ export function createProviderServer(deps: ProviderServerDeps): Express {
 
   app.get("/.well-known/agent-card.json", (_req, res) => {
     res.json({
-      name: "slate-provider",
-      description: "Metered multi-tool provider, settled via Slate ZK payment channels on Base.",
+      name: "avtar-provider",
+      description: "Metered multi-tool provider, settled via avtar.ai ZK payment channels on Base.",
       x402: { open: "/agent/open", requirements: terms },
       tools: TOOL_SPECS,
     });
@@ -102,7 +102,7 @@ export function createProviderServer(deps: ProviderServerDeps): Express {
       res.status(404).json({ served: false, reason: "unknown-channel" });
       return;
     }
-    const callToken = req.get("x-slate-channel-token") ?? undefined;
+    const callToken = req.get("x-avtar-channel-token") ?? undefined;
     if (!registry.isAuthorized(channelId, callToken)) {
       res.status(401).json({ served: false, reason: "unauthorized-channel-call" });
       return;
@@ -149,6 +149,7 @@ export function createProviderServer(deps: ProviderServerDeps): Express {
     res.json({
       served: true,
       result,
+      units: cost.toString(),
       cumulativeUnits: meter.cumulativeUnits.toString(),
       billable: meter.billable.toString(),
     });
@@ -156,7 +157,7 @@ export function createProviderServer(deps: ProviderServerDeps): Express {
 
   app.post("/channels/:id/finalize", (req, res) => {
     const channelId = String(req.params.id);
-    const callToken = req.get("x-slate-channel-token") ?? undefined;
+    const callToken = req.get("x-avtar-channel-token") ?? undefined;
     if (!registry.isAuthorized(channelId, callToken)) {
       res.status(401).json({ ok: false, error: "unauthorized-channel-finalize" });
       return;

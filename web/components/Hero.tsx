@@ -12,7 +12,7 @@ export default function Hero() {
               Groth16 proof of what is owed.
             </p>
             <div className="hero__actions">
-              <a className="btn btn--solid" href="#start">Read the quickstart</a>
+              <a className="btn btn--solid" href="/dashboard">Open the dashboard</a>
               <a className="btn btn--line" href="#mechanism">See how it settles</a>
             </div>
     

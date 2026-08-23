@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { addressToFieldPair } from "@slate-base/proving-setup";
+import { addressToFieldPair } from "@avtar/proving-setup";
 
 import { evmAddressToPayload } from "./prove.js";
 

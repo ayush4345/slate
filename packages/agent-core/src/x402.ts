@@ -1,6 +1,6 @@
 import { getAddress, type Address } from "viem";
 
-import { defaultToken } from "@slate-base/onchain-setup";
+import { defaultToken } from "@avtar/onchain-setup";
 
 import { SlateClientError } from "./client.js";
 

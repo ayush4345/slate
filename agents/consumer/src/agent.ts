@@ -1,5 +1,5 @@
-import type { MeteredServiceChannel, ToolCall, ToolResult } from "@slate-base/agent-core";
-import type { ToolSpec } from "@slate-base/agent-provider";
+import type { MeteredServiceChannel, ToolCall, ToolResult } from "@avtar/agent-core";
+import type { ToolSpec } from "@avtar/agent-provider";
 
 export interface AgentDecision {
   calls?: Array<{ tool: string; args: Record<string, unknown> }>;
@@ -16,6 +16,7 @@ export interface CallRecord {
   served: boolean;
   result?: unknown;
   reason?: string;
+  cost?: bigint;
   billable?: string;
   cumulativeUnits?: string;
 }
@@ -78,6 +79,10 @@ export class ServiceAgent {
           served: out.served,
         };
         if (out.reason !== undefined) record.reason = out.reason;
+        record.cost = out.cost;
+        Object.defineProperty(record, "toJSON", {
+          value: () => ({ ...record, cost: record.cost?.toString() }),
+        });
         if (out.served && out.result) {
           record.result = out.result.result;
           gathered.push(out.result);

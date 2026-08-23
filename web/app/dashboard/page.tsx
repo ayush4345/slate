@@ -9,7 +9,7 @@ import "./dashboard.css";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Channel dashboard — Slate on Base",
+  title: "Channel dashboard — avtar.ai on Base",
 };
 
 /** The channel the consumer agent has open, or 0 when there is none. */

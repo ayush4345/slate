@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const ROUTES = [
   "POST /v1/search",
@@ -13,6 +13,7 @@ const ROUTES = [
 ];
 
 const RATE = 0.0001;
+const ESCROW = 10;
 const MAX_ROWS = 6;
 
 /** The rows the server renders. The tape reads correctly before hydration and
@@ -26,15 +27,38 @@ const SEED = [
   "POST /v1/extract",
 ];
 
+type Phase = "metering" | "settling" | "settled";
+
+/** What settling actually does, in order. Shown one line at a time. */
+const STEPS = [
+  "building the 13-signal circuit input",
+  "generating Groth16 proof",
+  "verifyProof(a, b, c, signals) → true",
+  "nullifier spent · settlement ≤ escrow",
+  "transfer → provider · refund → depositor",
+];
+
+const usd = (n: number) => n.toFixed(6);
+
 export default function MeterTape() {
   const [rows, setRows] = useState<string[]>(SEED);
   const [calls, setCalls] = useState(SEED.length);
+  const [phase, setPhase] = useState<Phase>("metering");
+  const [step, setStep] = useState(0);
+  const timers = useRef<number[]>([]);
 
+  const clearTimers = () => {
+    for (const t of timers.current) window.clearTimeout(t);
+    timers.current = [];
+  };
+
+  // Metering runs until the reader settles. Uneven gaps: real traffic does not
+  // arrive on a metronome.
   useEffect(() => {
+    if (phase !== "metering") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     let timer: number;
-    // Uneven gaps: real traffic does not arrive on a metronome.
     const tick = () => {
       timer = window.setTimeout(() => {
         if (!document.hidden) {
@@ -47,7 +71,38 @@ export default function MeterTape() {
     };
     tick();
     return () => window.clearTimeout(timer);
+  }, [phase]);
+
+  const settle = useCallback(() => {
+    setPhase("settling");
+    setStep(0);
+
+    // Reduced motion gets the outcome, not the sequence.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setStep(STEPS.length);
+      setPhase("settled");
+      return;
+    }
+
+    STEPS.forEach((_, i) => {
+      timers.current.push(window.setTimeout(() => setStep(i + 1), 700 * (i + 1)));
+    });
+    timers.current.push(
+      window.setTimeout(() => setPhase("settled"), 700 * (STEPS.length + 1)),
+    );
   }, []);
+
+  const reset = useCallback(() => {
+    clearTimers();
+    setRows(SEED);
+    setCalls(SEED.length);
+    setStep(0);
+    setPhase("metering");
+  }, []);
+
+  useEffect(() => clearTimers, []);
+
+  const owed = calls * RATE;
 
   return (
     <figure className="tape" aria-labelledby="tape-cap">
@@ -56,7 +111,7 @@ export default function MeterTape() {
           channel <b>0x2a</b>
         </span>
         <span>
-          rate <b>{RATE.toFixed(4)} USDC</b> / call
+          escrow <b>{usd(ESCROW)} USDC</b>
         </span>
       </figcaption>
 
@@ -65,7 +120,7 @@ export default function MeterTape() {
           <li key={`${calls}-${i}`} data-new={i === 0 && calls > SEED.length ? "" : undefined}>
             <span>{route}</span>
             <span>200</span>
-            <span>{RATE.toFixed(6)}</span>
+            <span>{usd(RATE)}</span>
           </li>
         ))}
       </ul>
@@ -74,13 +129,48 @@ export default function MeterTape() {
 
       <p className="tape__total">
         <span>{calls} calls metered</span>
-        <b>{(calls * RATE).toFixed(6)} USDC</b>
+        <b>{usd(owed)} USDC</b>
       </p>
 
-      <p className="tape__settle">
-        <span>settle()</span>
-        <b>{calls > SEED.length ? "still 1 transaction" : "1 transaction, whenever you close"}</b>
-      </p>
+      {phase === "metering" && (
+        <div className="tape__settle">
+          <span>none of it on chain yet</span>
+          <button type="button" className="tape__btn" onClick={settle}>
+            settle()
+          </button>
+        </div>
+      )}
+
+      {phase !== "metering" && (
+        <div className="tape__steps" aria-live="polite">
+          <ol>
+            {STEPS.slice(0, step).map((label) => (
+              <li key={label}>{label}</li>
+            ))}
+          </ol>
+
+          {phase === "settled" && (
+            <>
+              <p className="tape__pay">
+                <span>provider paid</span>
+                <b>{usd(owed)} USDC</b>
+              </p>
+              <p className="tape__pay">
+                <span>depositor refunded</span>
+                <b>{usd(ESCROW - owed)} USDC</b>
+              </p>
+              <div className="tape__settle">
+                <span>
+                  {calls} calls · <b>1 transaction</b>
+                </span>
+                <button type="button" className="tape__btn" onClick={reset}>
+                  meter again
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </figure>
   );
 }

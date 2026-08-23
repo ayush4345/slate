@@ -1,6 +1,6 @@
 import express from "express";
 import type { Express } from "express";
-import { realChainFromEnv } from "@slate-base/agent-core";
+import { realChainFromEnv } from "@avtar/agent-core";
 import type { AgentSession } from "./session.js";
 import type { ConsumerServerConfig } from "./config.js";
 import { buildAgentSteps } from "./steps.js";
@@ -8,7 +8,7 @@ import { ALL_TOOLS, TOOL_PROVIDERS } from "./providers.js";
 
 function providerInfo(config: ConsumerServerConfig) {
   return {
-    name: "slate-provider",
+    name: "avtar-provider",
     url: config.providerUrl,
   };
 }

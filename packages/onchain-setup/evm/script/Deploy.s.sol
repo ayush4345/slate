@@ -3,8 +3,8 @@ pragma solidity ^0.8.28;
 
 import {Script, console} from "forge-std/Script.sol";
 import {Groth16Verifier} from "../src/Verifier.sol";
-import {SlateAgentRegistry} from "../src/SlateAgentRegistry.sol";
-import {SlateEscrow} from "../src/SlateEscrow.sol";
+import {AvtarAgentRegistry} from "../src/AvtarAgentRegistry.sol";
+import {AvtarEscrow} from "../src/AvtarEscrow.sol";
 
 /// Deploys the settlement stack.
 ///
@@ -31,12 +31,12 @@ contract Deploy is Script {
         address owner = vm.envOr("ESCROW_OWNER", msg.sender);
 
         Groth16Verifier verifier = new Groth16Verifier();
-        SlateAgentRegistry registry = new SlateAgentRegistry();
+        AvtarAgentRegistry registry = new AvtarAgentRegistry();
 
         // Own it long enough to seed the whitelist, then hand it over. Taking
         // `owner` in the constructor instead would mean the deployer cannot
         // whitelist anything when the two differ.
-        SlateEscrow escrow = new SlateEscrow(address(verifier), address(registry), msg.sender);
+        AvtarEscrow escrow = new AvtarEscrow(address(verifier), address(registry), msg.sender);
         escrow.whitelistToken(token);
         if (owner != msg.sender) escrow.transferOwnership(owner);
 
@@ -44,8 +44,8 @@ contract Deploy is Script {
 
         console.log("chain id          ", block.chainid);
         console.log("Groth16Verifier   ", address(verifier));
-        console.log("SlateAgentRegistry", address(registry));
-        console.log("SlateEscrow       ", address(escrow));
+        console.log("AvtarAgentRegistry", address(registry));
+        console.log("AvtarEscrow       ", address(escrow));
         console.log("settlement token  ", token);
         console.log("escrow owner      ", owner);
     }

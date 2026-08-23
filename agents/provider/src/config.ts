@@ -1,4 +1,4 @@
-import { x402ConfigFromEnv, type X402Config } from "@slate-base/agent-core";
+import { x402ConfigFromEnv, type X402Config } from "@avtar/agent-core";
 
 /** Runtime config for the provider's x402 HTTP server (read from env). */
 export interface ProviderServerConfig {

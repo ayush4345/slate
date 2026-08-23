@@ -1,7 +1,7 @@
 import type { Address, PublicClient } from "viem";
 
-import { escrowAbi, registryAbi, verifierAbi } from "@slate-base/onchain-setup";
-import type { PublicSignals, Settlement } from "@slate-base/proving-setup";
+import { escrowAbi, registryAbi, verifierAbi } from "@avtar/onchain-setup";
+import type { PublicSignals, Settlement } from "@avtar/proving-setup";
 
 type Signals13 = readonly [
   bigint, bigint, bigint, bigint, bigint, bigint, bigint,
@@ -24,7 +24,7 @@ export interface ReadsConfig {
   registry: Address;
 }
 
-/** The record `SlateAgentRegistry.getChannel` returns. */
+/** The record `AvtarAgentRegistry.getChannel` returns. */
 export interface Channel {
   rateCommitment: bigint;
   consumerPubkeyX: bigint;

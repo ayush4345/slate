@@ -21,7 +21,7 @@ export async function proxy(path: string, init?: RequestInit): Promise<Response>
     // A stopped agent is the normal case during development, so say which
     // address failed rather than surfacing a bare fetch error.
     return Response.json(
-      { ok: false, error: `agent unreachable at ${AGENT_URL}. Start it with: pnpm --filter @slate-base/agent-consumer serve` },
+      { ok: false, error: `agent unreachable at ${AGENT_URL}. Start it with: pnpm --filter @avtar/agent-consumer serve` },
       { status: 503 },
     );
   }

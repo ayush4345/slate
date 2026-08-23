@@ -1,7 +1,7 @@
 import { getAddress, type Address, type Chain } from "viem";
 import { baseSepolia } from "viem/chains";
 
-import { CHAINS_BY_ID, DEFAULT_RPC_URLS, defaultToken } from "@slate-base/onchain-setup";
+import { CHAINS_BY_ID, DEFAULT_RPC_URLS, defaultToken } from "@avtar/onchain-setup";
 
 import { accountFromPrivateKey, SlateClient, SlateClientError } from "./client.js";
 

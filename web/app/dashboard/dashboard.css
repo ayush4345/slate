@@ -156,13 +156,54 @@
 .console__strip dd { margin: 0.25rem 0 0; font-size: 0.9375rem; }
 .console__strip .is-num { font-family: var(--mono); font-size: 0.875rem; }
 
-.console__log { list-style: none; margin: 1.25rem 0 0; padding: 0; display: grid; gap: 1.25rem; }
-.console__log > li { border-left: 0; }
+.console__log { list-style: none; margin: 1.25rem 0 0; padding: 0; display: grid; gap: 1.75rem; }
 .console__hint { color: var(--on-paper-mute); font-size: 0.9375rem; }
-.console__q { font-weight: 600; }
-.console__a { margin-top: 0.375rem; color: var(--on-paper-mute); white-space: pre-wrap; }
-.console__a.is-failed { color: var(--meter-ink); }
-.console__meta { margin-top: 0.375rem; font-family: var(--mono); font-size: 0.8125rem; color: var(--on-paper-mute); }
+
+/* Who said what. The speaker is a labelled column rather than a bubble, so a
+   turn reads like the rest of the page: label left, content right. */
+.turn { display: grid; gap: 0.5rem; }
+.turn__row {
+  display: grid;
+  grid-template-columns: 5rem minmax(0, 1fr);
+  gap: 0.25rem 1rem;
+  align-items: baseline;
+}
+@media (max-width: 34rem) {
+  .turn__row { grid-template-columns: minmax(0, 1fr); }
+}
+
+.turn__who {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.01em;
+  color: var(--on-paper-mute);
+  overflow-wrap: anywhere;
+}
+.turn__text { margin: 0; min-width: 0; }
+
+/* The question is what the reader typed: tinted, so the eye finds it when
+   scanning back through a long session. */
+.turn__row--you .turn__text {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  font-weight: 500;
+}
+.turn__row--you .turn__who { color: var(--brand); }
+
+/* The answer is the thing being read, so it gets full ink, not muted grey. */
+.turn__row--agent .turn__text { color: var(--on-paper); }
+.turn__row--agent .turn__text.is-failed { color: var(--meter-ink); }
+.turn__row--agent .turn__text.is-pending { color: var(--on-paper-mute); }
+
+.console__meta {
+  margin: 0 0 0 6rem;
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  color: var(--on-paper-mute);
+}
+@media (max-width: 34rem) { .console__meta { margin-left: 0; } }
 
 .console__ask { margin-top: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.625rem; }
 .console__ask input {
@@ -228,3 +269,50 @@
   padding: 0.1em 0.35em;
 }
 .md a { color: var(--brand); }
+
+/* What this consumer can buy, and what it has bought so far. Each service is
+   one provider agent behind the x402 gateway. */
+.services {
+  display: grid;
+  grid-template-columns: 5rem minmax(0, 1fr);
+  gap: 0.5rem 1rem;
+  align-items: baseline;
+  margin-top: 1.125rem;
+  padding-top: 1.125rem;
+  border-top: 1px solid var(--rule);
+}
+@media (max-width: 34rem) { .services { grid-template-columns: minmax(0, 1fr); } }
+
+.services__label {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--on-paper-mute);
+}
+.services__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.services__list li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.3125rem 0.625rem;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--paper);
+  font-size: 0.875rem;
+}
+.services__list b { font-weight: 500; }
+.services__list code {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--on-paper-mute);
+}
+.services__list span { font-size: 0.75rem; color: var(--on-paper-mute); }
+/* Paid for this session: the border carries it, so the row stays scannable. */
+.services__list li[data-used] { border-color: var(--brand); }
+.services__list li[data-used] span { color: var(--brand); }

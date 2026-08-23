@@ -4,8 +4,8 @@ pragma solidity ^0.8.28;
 import {Script, console} from "forge-std/Script.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Groth16Verifier} from "../src/Verifier.sol";
-import {SlateAgentRegistry} from "../src/SlateAgentRegistry.sol";
-import {SlateEscrow} from "../src/SlateEscrow.sol";
+import {AvtarAgentRegistry} from "../src/AvtarAgentRegistry.sol";
+import {AvtarEscrow} from "../src/AvtarEscrow.sol";
 
 /// 6-decimal stand-in for USDC, so anvil runs do not need a predeployed token.
 contract MockUSDC is ERC20 {
@@ -33,8 +33,8 @@ contract DeployLocal is Script {
 
         MockUSDC token = new MockUSDC();
         Groth16Verifier verifier = new Groth16Verifier();
-        SlateAgentRegistry registry = new SlateAgentRegistry();
-        SlateEscrow escrow = new SlateEscrow(address(verifier), address(registry), msg.sender);
+        AvtarAgentRegistry registry = new AvtarAgentRegistry();
+        AvtarEscrow escrow = new AvtarEscrow(address(verifier), address(registry), msg.sender);
         escrow.whitelistToken(address(token));
         token.mint(msg.sender, INITIAL_MINT);
 
@@ -43,8 +43,8 @@ contract DeployLocal is Script {
         console.log("chain id          ", block.chainid);
         console.log("MockUSDC          ", address(token));
         console.log("Groth16Verifier   ", address(verifier));
-        console.log("SlateAgentRegistry", address(registry));
-        console.log("SlateEscrow       ", address(escrow));
+        console.log("AvtarAgentRegistry", address(registry));
+        console.log("AvtarEscrow       ", address(escrow));
         console.log("escrow owner      ", msg.sender);
     }
 }

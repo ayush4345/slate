@@ -3,7 +3,7 @@ pragma solidity ^0.8.28;
 
 import {SignalAddress} from "./SignalAddress.sol";
 
-/// @title SlateAgentRegistry
+/// @title AvtarAgentRegistry
 /// @notice The agreed terms of a payment channel, pinned before any metering
 /// happens.
 ///
@@ -16,7 +16,7 @@ import {SignalAddress} from "./SignalAddress.sol";
 ///
 /// The remaining four signals (escrow amount, settlement amount, nullifier, and
 /// the channel id itself) vary per settlement and are supplied with the proof.
-contract SlateAgentRegistry {
+contract AvtarAgentRegistry {
     using SignalAddress for address;
 
     uint256 internal constant N_PUBLIC = 13;

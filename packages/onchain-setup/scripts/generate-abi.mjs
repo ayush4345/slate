@@ -18,8 +18,8 @@ const outDir = join(packageRoot, "src/generated");
 mkdirSync(outDir, { recursive: true });
 
 const contracts = [
-  ["SlateEscrow", "escrowAbi"],
-  ["SlateAgentRegistry", "registryAbi"],
+  ["AvtarEscrow", "escrowAbi"],
+  ["AvtarAgentRegistry", "registryAbi"],
   ["Groth16Verifier", "verifierAbi"],
 ];
 

@@ -1,4 +1,4 @@
-import { ProviderMeter } from "@slate-base/agent-core";
+import { ProviderMeter } from "@avtar/agent-core";
 
 export interface OpenChannelInput {
   channelId: bigint;
