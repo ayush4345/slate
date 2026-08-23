@@ -31,6 +31,7 @@ Inside the Foundry project:
 | `src/SlateEscrow.sol` | Escrow: deposit → verify proof → check nullifier → pay out. |
 | `src/SlateAgentRegistry.sol` | Pinned channel terms, checked at settlement. |
 | `src/SignalAddress.sol` | Encodes an EVM address into the circuit's hi/lo field pair. |
+| `sdk/` | TypeScript client, Foundry ABIs, and the read path. |
 
 ## Base Sepolia
 
