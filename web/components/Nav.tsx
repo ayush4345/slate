@@ -20,7 +20,6 @@ export default function Nav({ variant = "site" }: { variant?: "site" | "app" }) 
               <a href="#guarantees" data-secondary>
                 Guarantees
               </a>
-              <a href="#start">Quickstart</a>
               <Link href="/dashboard">Dashboard</Link>
             </>
           ) : (

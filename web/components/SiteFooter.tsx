@@ -6,7 +6,6 @@ export default function SiteFooter() {
         <nav aria-label="Footer">
           <a href="https://github.com/ayush4345/slate-base">Repository</a>
           <a href="#mechanism">Mechanism</a>
-          <a href="#start">Quickstart</a>
         </nav>
       </div>
     </footer>
