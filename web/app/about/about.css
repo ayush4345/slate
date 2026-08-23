@@ -1,0 +1,42 @@
+/* The name at display size, then the whole argument in one paragraph. */
+
+.about { padding-block: clamp(3.5rem, 9vw, 7rem) clamp(4rem, 8vw, 7rem); }
+
+.about__emblem {
+  display: block;
+  width: clamp(4.5rem, 4vw + 3rem, 7.5rem);
+  height: auto;
+  margin-bottom: 1.5rem;
+}
+
+.about__mark {
+  font-size: clamp(3.25rem, 1.8rem + 7vw, 6rem);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.about__mark span { color: var(--brand); }
+
+.about__line {
+  margin-top: 1.25rem;
+  font-size: clamp(1.125rem, 1rem + 0.6vw, 1.5rem);
+  color: var(--on-paper-mute);
+  max-width: 34ch;
+  text-wrap: balance;
+}
+
+.about__body {
+  margin-top: clamp(2rem, 4vw, 3rem);
+  padding-top: clamp(1.75rem, 3vw, 2.25rem);
+  border-top: 1px solid var(--rule);
+  font-size: 1.0625rem;
+  max-width: 62ch;
+}
+
+.about__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: clamp(2rem, 4vw, 2.75rem);
+}

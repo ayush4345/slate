@@ -21,6 +21,7 @@ export const metadata: Metadata = {
   title: "avtar.ai on Base: meter off-chain, settle once",
   description:
     "Agents meter API calls against an escrowed balance and close the channel in one transaction. A Groth16 proof establishes what is owed; call volume and pricing never go on chain.",
+  icons: { icon: "/logo-emblem-transparent.png" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -1,4 +1,4 @@
-# avtar.ai
+# Avtar.ai
 
 Base (Ethereum L2) contracts for avtar.ai — metered agent-to-agent API calls,
 settled once per channel with a Groth16 proof.
@@ -7,6 +7,13 @@ Agents meter thousands of API calls off-chain against an escrowed balance,
 then close the whole channel in a single transaction: one Groth16 proof
 establishes what is owed, the escrow pays the provider and refunds the rest.
 Usage volume and pricing never go on-chain.
+
+## Disclosure
+
+The settlement design which is meter off-chain, prove the total with Groth16, settle
+once was first built and proven out on Stellar/Soroban before being adapted for Base. Everything in this repository is a from-scratch implementation for Base: new Solidity contracts, a new TypeScript SDK, a new Foundry test suite, and a rewritten circuit
+address-binding scheme (BN254 hi/lo limbs in place of 32-byte Stellar
+strkeys). No Soroban code, dependency, or artifact is present here.
 
 ## Layout
 

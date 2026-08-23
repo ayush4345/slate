@@ -6,21 +6,24 @@ const SIGNALS = [
   "escrow_amount",
   "settlement_amount",
   "nullifier",
-  "consumer_pubkey_x",
-  "consumer_pubkey_y",
-  "depositor_hi",
-  "depositor_lo",
-  "provider_hi",
-  "provider_lo",
-  "token_hi",
-  "token_lo",
+  "consumer_pubkey",
+  "depositor",
+  "provider",
+  "token",
 ];
 
 /** Which signals the chain already fixes, and which the proof still has to
  *  supply. The unknown ones are the point: they are what settlement decides. */
 const KNOWN_AT_OPEN = new Set([0, 1, 2, 5, 6, 7, 8, 9, 10, 11, 12]);
 
-export default function ChannelSummary({ view }: { view: ChannelView }) {
+export default function ChannelSummary({
+  view,
+  channelEscrow,
+}: {
+  view: ChannelView;
+  /** This channel's escrow, from the agent. The contract does not store it. */
+  channelEscrow?: bigint;
+}) {
   const { channel, deployment } = view;
 
   return (
@@ -89,12 +92,36 @@ export default function ChannelSummary({ view }: { view: ChannelView }) {
           Escrow
         </h2>
         <p className="figure">
-          <span className="figure__n">{formatUnits6(view.escrowBalance)}</span>
-          <span className="figure__u">USDC locked</span>
+          <span className="figure__n">
+            {formatUnits6(channelEscrow ?? view.escrowBalance)}
+          </span>
+          <span className="figure__u">
+            USDC {channelEscrow === undefined ? "in the escrow" : "on this channel"}
+          </span>
         </p>
+        {channelEscrow !== undefined && (
+          <dl className="rows">
+            <div>
+              <dt>Depositor balance</dt>
+              <dd className="is-num">{formatUnits6(view.escrowBalance)} USDC</dd>
+            </div>
+          </dl>
+        )}
         <p className="panel__note">
-          This is the ceiling. A settlement larger than the balance reverts, so the
-          worst case for the depositor is the amount they chose to lock.
+          {channelEscrow === undefined ? (
+            <>
+              The escrow pools balances per depositor, not per channel, so this is
+              everything this depositor has locked. A channel&rsquo;s own ceiling is
+              carried in the proof as <code>escrow_amount</code>.
+            </>
+          ) : (
+            <>
+              The channel&rsquo;s ceiling comes from the proof; the contract only
+              checks the depositor&rsquo;s pooled balance covers it. A settlement
+              larger than the ceiling reverts, so the worst case for the depositor
+              is the amount they chose to lock.
+            </>
+          )}
         </p>
       </section>
 

@@ -6,14 +6,10 @@ const SIGNALS: { name: string; fixes?: string; pair?: boolean }[] = [
   { name: "escrow_amount", fixes: "The ceiling the escrow will pay" },
   { name: "settlement_amount", fixes: "What the provider is owed" },
   { name: "nullifier", fixes: "Spent on use, so no proof settles twice" },
-  { name: "consumer_pubkey_x", fixes: "Who signed the metered vouchers", pair: true },
-  { name: "consumer_pubkey_y" },
-  { name: "depositor_hi", fixes: "Who gets the refund, as a field pair", pair: true },
-  { name: "depositor_lo" },
-  { name: "provider_hi", fixes: "Who gets paid, as a field pair", pair: true },
-  { name: "provider_lo" },
-  { name: "token_hi", fixes: "Which ERC-20 moves, as a field pair", pair: true },
-  { name: "token_lo" },
+  { name: "consumer_pubkey", fixes: "Who signed the metered vouchers" },
+  { name: "depositor", fixes: "Who gets the refund" },
+  { name: "provider", fixes: "Who gets paid" },
+  { name: "token", fixes: "Which ERC-20 moves" },
 ];
 
 export default function SignalLedger() {
@@ -23,7 +19,7 @@ export default function SignalLedger() {
         <div className="band__head">
           <h2>What the chain actually sees</h2>
           <p className="band__lead">
-            Thirteen field elements, in this order. The amount owed is in there. How
+            Field elements, in this order. The amount owed is in there. How
             many calls produced it is not, and neither is what any of them were for.
           </p>
         </div>
@@ -55,7 +51,7 @@ export default function SignalLedger() {
           </table>
         </div>
 
-        <div className="offchain">
+        {/* <div className="offchain">
           <h3>Addresses are split in half on purpose</h3>
           <p>
             BN254 field elements cannot hold a full address, so each one enters the
@@ -63,7 +59,7 @@ export default function SignalLedger() {
             identically and a shared test vector pins both, so a mismatch fails in CI
             rather than at settlement.
           </p>
-        </div>
+        </div> */}
       </div>
     </section>
   );

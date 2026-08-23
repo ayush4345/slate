@@ -7,8 +7,14 @@ export default function Nav({ variant = "site" }: { variant?: "site" | "app" }) 
     <header className="nav">
       <div className="shell nav__row">
         <Link className="wordmark" href="/">
-          <b>avtar</b>
-          <span>.ai</span>
+          <img
+            src="/logo-emblem-transparent.png"
+            alt=""
+            width={44}
+            height={44}
+            className="wordmark__mark"
+          />
+          <b>avtar.ai</b>
         </Link>
         <nav className="nav__links" aria-label="Sections">
           {variant === "site" ? (

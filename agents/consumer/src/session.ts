@@ -96,9 +96,14 @@ export class AgentSession {
   }
 
   /** The channel this session is metering against, once it has opened one. */
-  getChannel(): { channelId?: string; depositor?: string; token?: string } {
-    const out: { channelId?: string; depositor?: string; token?: string } = {};
-    if (this.#terms !== undefined) out.channelId = this.#terms.channelId.toString();
+  getChannel(): { channelId?: string; depositor?: string; token?: string; escrow?: string } {
+    const out: { channelId?: string; depositor?: string; token?: string; escrow?: string } = {};
+    if (this.#terms !== undefined) {
+      out.channelId = this.#terms.channelId.toString();
+      // Per-channel escrow lives here and in the proof, never in the escrow
+      // contract, which pools balances per depositor.
+      out.escrow = this.#terms.escrow.toString();
+    }
     if (this.#depositor !== undefined) out.depositor = this.#depositor;
     if (this.#token !== undefined) out.token = this.#token;
     return out;

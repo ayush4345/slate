@@ -95,21 +95,23 @@ p { margin: 0; text-wrap: pretty; }
   display: flex;
   align-items: center;
   gap: 2rem;
-  height: 3.75rem;
+  height: 4.5rem;
 }
 
 .wordmark {
   display: inline-flex;
-  align-items: baseline;
-  gap: 0.4rem;
-  font-family: var(--mono);
-  font-size: 0.9375rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  align-items: center;
+  gap: 0.5rem;
   text-decoration: none;
 }
-.wordmark b { font-weight: 600; }
-.wordmark span { color: var(--on-paper-mute); font-weight: 400; }
+.wordmark__mark { display: block; }
+.wordmark b {
+  font-family: var(--mono);
+  font-size: 2rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
 
 .nav__links {
   display: flex;
