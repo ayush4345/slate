@@ -7,6 +7,8 @@ import Markdown from "./Markdown";
 interface Health {
   ok?: boolean;
   channel?: { channelId?: string; depositor?: string; token?: string };
+  /** The provider agents this consumer can buy from, one per tool. */
+  providers?: { tool?: string; id?: string; label?: string }[];
   provider?: { name?: string; url?: string };
   providerTerms?: { rate?: string; payTo?: string; asset?: string; network?: string } | null;
   brain?: string;
@@ -21,7 +23,7 @@ interface Payment {
   sessionCalls?: number;
   sessionBillable?: string;
   tokenSymbol?: string;
-  providers?: { providerLabel?: string; turnCalls?: number }[];
+  providers?: { providerLabel?: string; turnCalls?: number; sessionCalls?: number }[];
 }
 
 interface Turn {
@@ -168,6 +170,13 @@ export default function AgentConsole({ explorer }: { explorer: string }) {
   const metered = health?.payment;
   const liveChannel = health?.channel?.channelId;
 
+  // Calls billed to each provider so far, so the list shows which of the
+  // available services this session has actually paid for.
+  const usage = new Map<string, number>();
+  for (const p of metered?.providers ?? []) {
+    if (p.providerLabel) usage.set(p.providerLabel, p.sessionCalls ?? 0);
+  }
+
   const txLink = (hash: string) =>
     explorer ? (
       <a className="console__tx" href={`${explorer}/tx/${hash}`} target="_blank" rel="noreferrer noopener">
@@ -236,6 +245,24 @@ export default function AgentConsole({ explorer }: { explorer: string }) {
             </p>
           )}
 
+          {health?.providers && health.providers.length > 0 && (
+            <div className="services">
+              <span className="services__label">Services</span>
+              <ul className="services__list">
+                {health.providers.map((service) => {
+                  const calls = usage.get(service.label ?? "") ?? 0;
+                  return (
+                    <li key={service.id ?? service.tool} data-used={calls > 0 ? "" : undefined}>
+                      <b>{service.label ?? service.tool}</b>
+                      <code>{service.tool}</code>
+                      <span>{calls > 0 ? `${calls} call${calls === 1 ? "" : "s"}` : "unused"}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
           <ol className="console__log">
             {turns.length === 0 && health?.ok !== false && (
               <li className="console__hint">
@@ -244,17 +271,29 @@ export default function AgentConsole({ explorer }: { explorer: string }) {
               </li>
             )}
             {turns.map((turn) => (
-              <li key={turn.id}>
-                <p className="console__q">{turn.question}</p>
-                {turn.pending ? (
-                  <p className="console__a">…</p>
-                ) : turn.failed ? (
-                  <p className="console__a is-failed">{turn.answer}</p>
-                ) : (
-                  <div className="console__a">
-                    <Markdown>{turn.answer}</Markdown>
-                  </div>
-                )}
+              <li key={turn.id} className="turn">
+                <div className="turn__row turn__row--you">
+                  <span className="turn__who">you</span>
+                  <p className="turn__text">{turn.question}</p>
+                </div>
+
+                <div className="turn__row turn__row--agent">
+                  <span className="turn__who">
+                    {turn.servedBy && turn.servedBy.length > 0
+                      ? `agent · ${turn.servedBy.join(", ").toLowerCase()}`
+                      : "agent"}
+                  </span>
+                  {turn.pending ? (
+                    <p className="turn__text is-pending">thinking…</p>
+                  ) : turn.failed ? (
+                    <p className="turn__text is-failed">{turn.answer}</p>
+                  ) : (
+                    <div className="turn__text">
+                      <Markdown>{turn.answer}</Markdown>
+                    </div>
+                  )}
+                </div>
+
                 {turn.calls !== undefined && (
                   <p className="console__meta">
                     {turn.calls} call(s) metered
