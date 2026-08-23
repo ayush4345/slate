@@ -16,6 +16,7 @@ export interface CallRecord {
   served: boolean;
   result?: unknown;
   reason?: string;
+  cost?: bigint;
   billable?: string;
   cumulativeUnits?: string;
 }
@@ -78,6 +79,10 @@ export class ServiceAgent {
           served: out.served,
         };
         if (out.reason !== undefined) record.reason = out.reason;
+        record.cost = out.cost;
+        Object.defineProperty(record, "toJSON", {
+          value: () => ({ ...record, cost: record.cost?.toString() }),
+        });
         if (out.served && out.result) {
           record.result = out.result.result;
           gathered.push(out.result);

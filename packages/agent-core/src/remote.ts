@@ -112,18 +112,27 @@ export class RemoteChannel implements MeteredServiceChannel<ToolCall, ToolResult
       served?: boolean;
       result?: ToolResult;
       reason?: string;
+      units?: string;
       cumulativeUnits?: string;
       billable?: string;
     };
 
     const served = body.served === true;
-    const cumulativeUnits = body.cumulativeUnits !== undefined ? BigInt(body.cumulativeUnits) : undefined;
-    if (served && cumulativeUnits !== undefined) this.#units = cumulativeUnits;
+    const explicitUnits = parseNonNegativeUnits(body.units);
+    const cumulativeUnits = parseNonNegativeUnits(body.cumulativeUnits);
+    const cumulativeDelta =
+      cumulativeUnits !== undefined && cumulativeUnits >= this.#units
+        ? cumulativeUnits - this.#units
+        : undefined;
+    const cost = !served ? 0n : explicitUnits ?? cumulativeDelta ?? 1n;
+    if (served && cumulativeUnits !== undefined && cumulativeUnits >= this.#units) {
+      this.#units = cumulativeUnits;
+    }
 
     const out: CallOutcome<ToolCall, ToolResult> = {
       served,
       request: req,
-      cost: served ? 1n : 0n,
+      cost,
     };
     if (body.result !== undefined) out.result = body.result;
     if (body.reason !== undefined) out.reason = body.reason;
@@ -156,4 +165,14 @@ function parseAdvertisedRate(value: string): bigint {
   const whole = parts[0] ?? "0";
   const fractional = (parts[1] ?? "").padEnd(6, "0").slice(0, 6);
   return BigInt(whole || "0") * 1_000_000n + BigInt(fractional || "0");
+}
+
+function parseNonNegativeUnits(value: string | undefined): bigint | undefined {
+  if (value === undefined) return undefined;
+  try {
+    const units = BigInt(value);
+    return units >= 0n ? units : undefined;
+  } catch {
+    return undefined;
+  }
 }

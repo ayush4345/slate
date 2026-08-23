@@ -149,6 +149,7 @@ export function createProviderServer(deps: ProviderServerDeps): Express {
     res.json({
       served: true,
       result,
+      units: cost.toString(),
       cumulativeUnits: meter.cumulativeUnits.toString(),
       billable: meter.billable.toString(),
     });

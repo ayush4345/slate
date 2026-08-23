@@ -33,6 +33,11 @@ function summarizeCall(tool: string, result: unknown): string {
   if (tool === "translate_text") {
     return String(r.translatedText ?? r.text ?? "—");
   }
+  if (tool === "preflight_base_transaction") {
+    const verdict = String(r.verdict ?? "unknown");
+    const gasEstimate = r.gasEstimate ?? "unavailable";
+    return `Verdict: ${verdict} · Gas estimate: ${gasEstimate} · Advisory simulation only; not a safety guarantee.`;
+  }
   return JSON.stringify(result);
 }
 

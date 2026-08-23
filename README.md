@@ -223,6 +223,20 @@ The consumer serves `/health`, `/chat`, `/settle`, and `/session/new`; the web
 app proxies those under `/api/*` so the browser never talks to the agent
 directly.
 
+### Transaction preflight
+
+Ask the consumer to deterministically simulate a prospective transaction:
+
+```text
+preflight <from-address> <to-address> [calldata-hex] [value-wei]
+```
+
+`calldata-hex` defaults to `0x` and `value-wei` defaults to `0`. Preflights
+support Base (chain ID `8453`) and Base Sepolia (chain ID `84532`).
+
+Results are pending-state simulations only. They are not a security audit,
+execution guarantee, nested-router trace, or balance/total-fee check.
+
 ## Develop
 
 ```sh

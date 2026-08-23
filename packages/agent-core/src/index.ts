@@ -12,3 +12,4 @@ export * from "./money.js";
 export * from "./channel.js";
 export * from "./remote.js";
 export * from "./chain.js";
+export * from "./public-client.js";

@@ -2,6 +2,7 @@ export const TOOL_PROVIDERS: Record<string, { id: string; label: string }> = {
   get_weather: { id: "weather-provider", label: "Weather" },
   get_crypto_price: { id: "crypto-provider", label: "Crypto price" },
   translate_text: { id: "translation-provider", label: "Translation" },
+  preflight_base_transaction: { id: "preflight-provider", label: "Base transaction preflight" },
 };
 
 export const ALL_TOOLS = Object.keys(TOOL_PROVIDERS);
