@@ -104,7 +104,7 @@ export class RemoteChannel implements MeteredServiceChannel<ToolCall, ToolResult
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-slate-channel-token": this.callToken,
+        "x-avtar-channel-token": this.callToken,
       },
       body: JSON.stringify({ payload: req }),
     });
@@ -144,7 +144,7 @@ export class RemoteChannel implements MeteredServiceChannel<ToolCall, ToolResult
   async close(): Promise<CloseResult> {
     const res = await fetch(joinUrl(this.providerUrl, `/channels/${this.channelId}/finalize`), {
       method: "POST",
-      headers: { "x-slate-channel-token": this.callToken },
+      headers: { "x-avtar-channel-token": this.callToken },
     });
     const body = (await res.json().catch(() => ({}))) as { finalUnits?: string };
     const totalUnits = body.finalUnits !== undefined ? BigInt(body.finalUnits) : this.#units;

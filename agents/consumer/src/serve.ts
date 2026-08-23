@@ -1,5 +1,5 @@
-// pnpm --filter @slate-base/agent-provider serve   # :4021
-// pnpm --filter @slate-base/agent-consumer serve   # :4022
+// pnpm --filter @avtar/agent-provider serve   # :4021
+// pnpm --filter @avtar/agent-consumer serve   # :4022
 //
 // Env: CONSUMER_PORT, PROVIDER_URL, CORS_ORIGIN, RATE, ESCROW,
 //      OPENAI_API_KEY (optional), X402_PAYMENT_SIGNATURE, EVM_PRIVATE_KEY.
@@ -24,7 +24,7 @@ async function main(): Promise<void> {
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error(`\n✗ Failed to open session with provider at ${config.providerUrl}.`);
-    console.error(`  Start the provider first:  pnpm --filter @slate-base/agent-provider serve`);
+    console.error(`  Start the provider first:  pnpm --filter @avtar/agent-provider serve`);
     console.error(`  ${msg}`);
     process.exitCode = 1;
     return;

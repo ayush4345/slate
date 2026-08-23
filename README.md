@@ -112,7 +112,7 @@ it.
 
 The committed `Verifier.sol` was generated from `settlement_final.zkey`, which
 is not in git. The full loop therefore uses a local key in `.cache/`
-(`pnpm --filter @slate-base/onchain-setup prove:setup`) so proving does not
+(`pnpm --filter @avtar/onchain-setup prove:setup`) so proving does not
 depend on a missing artifact. It does not replace the committed verifier.
 
 To poke at a node by hand instead:
@@ -243,7 +243,7 @@ execution guarantee, nested-router trace, or balance/total-fee check.
 pnpm install
 pnpm test                              # every package
 pnpm test:e2e                          # spawns anvil
-pnpm --filter @slate-base/web build    # type-checks the app
+pnpm --filter @avtar/web build    # type-checks the app
 
 cd packages/onchain-setup/evm && forge test
 ```

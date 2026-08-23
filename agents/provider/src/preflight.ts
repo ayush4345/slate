@@ -1,4 +1,4 @@
-import type { Service } from "@slate-base/agent-core";
+import type { Service } from "@avtar/agent-core";
 
 type Address = `0x${string}`;
 type Hex = `0x${string}`;

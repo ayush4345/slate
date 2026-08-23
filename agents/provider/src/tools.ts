@@ -1,4 +1,4 @@
-import { publicClientForChain, ToolboxService } from "@slate-base/agent-core";
+import { publicClientForChain, ToolboxService } from "@avtar/agent-core";
 import type { HttpClient } from "./http.js";
 import { WeatherService } from "./weather.js";
 import { CryptoPriceService } from "./crypto.js";

@@ -46,7 +46,7 @@ if (!existsSync(zkey)) {
   console.log("groth16 setup (local e2e key — not a production ceremony)");
   execFileSync(
     "node",
-    [snarkjs, "groth16", "setup", r1cs, ptau, zkey, "-e=slate-base-e2e"],
+    [snarkjs, "groth16", "setup", r1cs, ptau, zkey, "-e=avtar-e2e"],
     { stdio: "inherit" },
   );
 }

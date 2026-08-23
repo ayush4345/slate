@@ -1,4 +1,4 @@
-import { formatUnits } from "@slate-base/agent-core";
+import { formatUnits } from "@avtar/agent-core";
 import type { CallRecord, TurnPayment } from "./agent.js";
 import { gatewayStepDetail, providerForTool } from "./providers.js";
 

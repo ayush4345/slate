@@ -14,10 +14,10 @@ importers:
 
   agents/consumer:
     dependencies:
-      '@slate-base/agent-core':
+      '@avtar/agent-core':
         specifier: workspace:*
         version: link:../../packages/agent-core
-      '@slate-base/agent-provider':
+      '@avtar/agent-provider':
         specifier: workspace:*
         version: link:../provider
       dotenv:
@@ -46,7 +46,7 @@ importers:
 
   agents/provider:
     dependencies:
-      '@slate-base/agent-core':
+      '@avtar/agent-core':
         specifier: workspace:*
         version: link:../../packages/agent-core
       dotenv:
@@ -71,10 +71,10 @@ importers:
 
   packages/agent-core:
     dependencies:
-      '@slate-base/onchain-setup':
+      '@avtar/onchain-setup':
         specifier: workspace:*
         version: link:../onchain-setup
-      '@slate-base/proving-setup':
+      '@avtar/proving-setup':
         specifier: workspace:*
         version: link:../proving-setup
       viem:
@@ -112,10 +112,10 @@ importers:
 
   web:
     dependencies:
-      '@slate-base/agent-core':
+      '@avtar/agent-core':
         specifier: workspace:*
         version: link:../packages/agent-core
-      '@slate-base/onchain-setup':
+      '@avtar/onchain-setup':
         specifier: workspace:*
         version: link:../packages/onchain-setup
       next:

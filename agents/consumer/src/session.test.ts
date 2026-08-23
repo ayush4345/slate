@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import type { CallOutcome, CloseResult, MeteredServiceChannel, ToolCall, ToolResult } from "@slate-base/agent-core";
+import type { CallOutcome, CloseResult, MeteredServiceChannel, ToolCall, ToolResult } from "@avtar/agent-core";
 import type { AgentBrain } from "./agent.js";
 import { AgentSession } from "./session.js";
 

@@ -1,4 +1,4 @@
-// pnpm --filter @slate-base/agent-provider serve
+// pnpm --filter @avtar/agent-provider serve
 // Env: PORT, RATE, X402_NETWORK, X402_ASSET, X402_PAY_TO, X402_MAX_AMOUNT,
 //      MOCK_X402 (default true), X402_FACILITATOR_URL.
 import { dirname, resolve } from "node:path";

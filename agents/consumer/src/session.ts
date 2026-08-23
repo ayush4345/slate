@@ -13,8 +13,8 @@ import {
   type ProviderTerms,
   type ToolCall,
   type ToolResult,
-} from "@slate-base/agent-core";
-import { TOOL_SPECS } from "@slate-base/agent-provider";
+} from "@avtar/agent-core";
+import { TOOL_SPECS } from "@avtar/agent-provider";
 import { ServiceAgent } from "./agent.js";
 import type { AgentBrain, AgentRunResult, ProviderSettlement, TurnPayment } from "./agent.js";
 import { StubAgentBrain } from "./stub-agent.js";

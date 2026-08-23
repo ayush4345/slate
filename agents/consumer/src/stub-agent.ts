@@ -1,6 +1,6 @@
-import type { ToolResult } from "@slate-base/agent-core";
+import type { ToolResult } from "@avtar/agent-core";
 import type { AgentBrain, AgentDecision } from "./agent.js";
-import type { ToolSpec } from "@slate-base/agent-provider";
+import type { ToolSpec } from "@avtar/agent-provider";
 
 const COINS: Record<string, string> = {
   btc: "bitcoin", bitcoin: "bitcoin", eth: "ethereum", ethereum: "ethereum",

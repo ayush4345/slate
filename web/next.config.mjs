@@ -2,7 +2,7 @@
 const nextConfig = {
   // The workspace packages ship TypeScript sources built by tsc, so Next needs
   // to transpile them rather than treat them as prebuilt node_modules.
-  transpilePackages: ["@slate-base/agent-core", "@slate-base/onchain-setup"],
+  transpilePackages: ["@avtar/agent-core", "@avtar/onchain-setup"],
 };
 
 export default nextConfig;

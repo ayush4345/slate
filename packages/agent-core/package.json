@@ -1,5 +1,5 @@
 {
-  "name": "@slate-base/agent-core",
+  "name": "@avtar/agent-core",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -24,8 +24,8 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@slate-base/onchain-setup": "workspace:*",
-    "@slate-base/proving-setup": "workspace:*",
+    "@avtar/onchain-setup": "workspace:*",
+    "@avtar/proving-setup": "workspace:*",
     "viem": "^2.39.4"
   },
   "devDependencies": {

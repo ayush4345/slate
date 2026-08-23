@@ -1,6 +1,6 @@
 import express from "express";
 import type { Express } from "express";
-import { realChainFromEnv } from "@slate-base/agent-core";
+import { realChainFromEnv } from "@avtar/agent-core";
 import type { AgentSession } from "./session.js";
 import type { ConsumerServerConfig } from "./config.js";
 import { buildAgentSteps } from "./steps.js";

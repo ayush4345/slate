@@ -13,8 +13,8 @@ import {
   type Address,
   type ChannelTerms,
   type ChainClient,
-} from "@slate-base/agent-core";
-import { FetchHttpClient, buildToolbox, TOOL_SPECS } from "@slate-base/agent-provider";
+} from "@avtar/agent-core";
+import { FetchHttpClient, buildToolbox, TOOL_SPECS } from "@avtar/agent-provider";
 import { ServiceAgent } from "./agent.js";
 import { StubAgentBrain } from "./stub-agent.js";
 import { OpenAiAgentBrain } from "./openai-agent.js";

@@ -1,4 +1,4 @@
-import type { Service } from "@slate-base/agent-core";
+import type { Service } from "@avtar/agent-core";
 import type { HttpClient } from "./http.js";
 
 export interface WeatherRequest {

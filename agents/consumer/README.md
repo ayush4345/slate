@@ -17,18 +17,18 @@ Runs the provider toolbox in-process (real APIs, mock chain unless
 `EVM_PRIVATE_KEY` is set):
 
 ```bash
-pnpm --filter @slate-base/agent-consumer demo
-pnpm --filter @slate-base/agent-consumer demo "Weather in Tokyo and the price of ETH"
+pnpm --filter @avtar/agent-consumer demo
+pnpm --filter @avtar/agent-consumer demo "Weather in Tokyo and the price of ETH"
 ```
 
 ## Chat server (for the website)
 
 ```bash
 # terminal 1
-pnpm --filter @slate-base/agent-provider serve     # :4021
+pnpm --filter @avtar/agent-provider serve     # :4021
 
 # terminal 2
-pnpm --filter @slate-base/agent-consumer serve     # :4022
+pnpm --filter @avtar/agent-consumer serve     # :4022
 ```
 
 | Method | Path | What |

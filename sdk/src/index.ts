@@ -1,4 +1,4 @@
-// @slate-base/sdk — drives the Slate settlement contracts on Base.
+// @avtar/sdk — drives the Avtar settlement contracts on Base.
 //
 // `settlement.ts` is pure: snarkjs output in, verifier calldata out, plus the
 // address packing the circuit expects. `client.ts` puts it on chain.

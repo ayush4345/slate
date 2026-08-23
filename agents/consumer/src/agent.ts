@@ -1,5 +1,5 @@
-import type { MeteredServiceChannel, ToolCall, ToolResult } from "@slate-base/agent-core";
-import type { ToolSpec } from "@slate-base/agent-provider";
+import type { MeteredServiceChannel, ToolCall, ToolResult } from "@avtar/agent-core";
+import type { ToolSpec } from "@avtar/agent-provider";
 
 export interface AgentDecision {
   calls?: Array<{ tool: string; args: Record<string, unknown> }>;

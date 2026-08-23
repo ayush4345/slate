@@ -18,8 +18,8 @@ import {
   escrowAbi,
   registryAbi,
   type ContractAddresses,
-} from "@slate-base/onchain-setup";
-import { addressToFieldPair, SIGNAL, type Settlement } from "@slate-base/proving-setup";
+} from "@avtar/onchain-setup";
+import { addressToFieldPair, SIGNAL, type Settlement } from "@avtar/proving-setup";
 
 export interface SlateClientOptions {
   rpcUrl: string;

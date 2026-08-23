@@ -3,7 +3,7 @@ import { once } from "node:events";
 import type { AddressInfo } from "node:net";
 import { test } from "node:test";
 
-import { ToolboxService, encodePayment } from "@slate-base/agent-core";
+import { ToolboxService, encodePayment } from "@avtar/agent-core";
 import {
   TransactionPreflightService,
   type PreflightRpc,
@@ -79,7 +79,7 @@ test("a channel call requires the secret issued during channel open", async () =
 
     const served = await fetch(`${baseUrl}/channels/42/call`, {
       ...request,
-      headers: { ...request.headers, "x-slate-channel-token": callToken },
+      headers: { ...request.headers, "x-avtar-channel-token": callToken },
     });
     assert.equal(served.status, 200);
     assert.deepEqual(await served.json(), {
@@ -95,7 +95,7 @@ test("a channel call requires the secret issued during channel open", async () =
 
     const finalized = await fetch(`${baseUrl}/channels/42/finalize`, {
       method: "POST",
-      headers: { "x-slate-channel-token": callToken },
+      headers: { "x-avtar-channel-token": callToken },
     });
     assert.equal(finalized.status, 200);
     assert.deepEqual(await finalized.json(), { ok: true, finalUnits: "1" });
@@ -148,7 +148,7 @@ async function callPreflight(
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-slate-channel-token": callToken,
+      "x-avtar-channel-token": callToken,
     },
     body: JSON.stringify({ payload: { tool: "preflight_base_transaction", args } }),
   });
@@ -217,7 +217,7 @@ test("preflight validation failures do not advance the meter", async () => {
 
     const finalized = await fetch(`${baseUrl}/channels/${channelId}/finalize`, {
       method: "POST",
-      headers: { "x-slate-channel-token": callToken },
+      headers: { "x-avtar-channel-token": callToken },
     });
     assert.deepEqual(await finalized.json(), { ok: true, finalUnits: "0" });
   }, preflightToolbox());

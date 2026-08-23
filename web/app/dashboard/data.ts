@@ -7,8 +7,8 @@ import {
   registryGetChannel,
   registryHasChannel,
   type Channel,
-} from "@slate-base/agent-core";
-import { CHAINS_BY_ID, DEFAULT_RPC_URLS, defaultToken } from "@slate-base/onchain-setup";
+} from "@avtar/agent-core";
+import { CHAINS_BY_ID, DEFAULT_RPC_URLS, defaultToken } from "@avtar/onchain-setup";
 import { baseSepolia } from "viem/chains";
 
 export interface Deployment {

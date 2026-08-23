@@ -21,5 +21,5 @@ GET  /.well-known/agent-card.json
 ```
 
 ```bash
-pnpm --filter @slate-base/agent-provider serve   # :4021
+pnpm --filter @avtar/agent-provider serve   # :4021
 ```

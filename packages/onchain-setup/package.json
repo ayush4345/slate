@@ -1,5 +1,5 @@
 {
-  "name": "@slate-base/onchain-setup",
+  "name": "@avtar/onchain-setup",
   "version": "0.1.0",
   "private": true,
   "type": "module",

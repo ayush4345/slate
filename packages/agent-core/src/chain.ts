@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 
-import type { Settlement } from "@slate-base/proving-setup";
+import type { Settlement } from "@avtar/proving-setup";
 
 import { SlateClient } from "./client.js";
 import { slateClientFromEnv } from "./env.js";

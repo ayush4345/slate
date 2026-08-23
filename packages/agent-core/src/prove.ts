@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { addressToFieldPair, toSettlement, type Settlement } from "@slate-base/proving-setup";
+import { addressToFieldPair, toSettlement, type Settlement } from "@avtar/proving-setup";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 const ensureScript = join(repoRoot, "packages/onchain-setup/scripts/ensure-proving.mjs");

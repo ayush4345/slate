@@ -8,7 +8,7 @@ import { createPublicClient, createWalletClient, http, parseAbi, type Address } 
 import { foundry } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 
-import { erc20Abi, escrowAbi } from "@slate-base/onchain-setup";
+import { erc20Abi, escrowAbi } from "@avtar/onchain-setup";
 import { accountFromPrivateKey, SlateClient } from "./client.js";
 import { ensureProvingArtifacts, proveSettlement } from "./prove.js";
 import {
@@ -23,7 +23,7 @@ import {
   toPublicSignals,
   type ProofCalldata,
   type Settlement,
-} from "@slate-base/proving-setup";
+} from "@avtar/proving-setup";
 
 /** The Foundry project, resolved from `dist/`. */
 const forgeRoot = fileURLToPath(new URL("../../onchain-setup/evm/", import.meta.url));
