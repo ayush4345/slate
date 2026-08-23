@@ -1,6 +1,6 @@
-# slate-base
+# avtar.ai
 
-Base (Ethereum L2) contracts for Slate — metered agent-to-agent API calls,
+Base (Ethereum L2) contracts for avtar.ai — metered agent-to-agent API calls,
 settled once per channel with a Groth16 proof.
 
 Agents meter thousands of API calls off-chain against an escrowed balance,

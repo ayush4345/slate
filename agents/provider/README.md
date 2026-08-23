@@ -1,7 +1,7 @@
-# @slate-base/agent-provider
+# avtar.ai provider agent
 
 Demo **provider agent**. Sells three keyless services per call through a
-metered Slate channel:
+metered avtar.ai channel:
 
 | Service | API | Request → result |
 | --- | --- | --- |

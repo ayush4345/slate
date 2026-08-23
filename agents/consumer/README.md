@@ -1,4 +1,4 @@
-# @slate-base/agent-consumer
+# avtar.ai consumer agent
 
 Demo **consumer agent**. Given a natural-language goal it picks which
 provider tools to buy (weather, crypto price, translation), meters each

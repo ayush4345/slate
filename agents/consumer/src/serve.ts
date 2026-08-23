@@ -32,7 +32,7 @@ async function main(): Promise<void> {
 
   const app = createConsumerServer({ config, session });
   const server = app.listen(config.port, () => {
-    console.log(`slate-base consumer listening on http://localhost:${config.port}`);
+    console.log(`avtar.ai consumer listening on http://localhost:${config.port}`);
     console.log(`  brain:       ${process.env.OPENAI_API_KEY ? "OpenAI" : "stub (offline)"}`);
     console.log(`  chat:        POST /chat   { "message": "…" }`);
     console.log(`  settle:      POST /settle`);

@@ -64,8 +64,8 @@ export default function Mechanism() {
             <rect className="box" x="400" y="124" width="399" height="92" rx="4"/>
             <text className="is-strong" x="416" y="148">Base</text>
             <text x="416" y="170">Groth16Verifier.verifyProof(...)   →  true</text>
-            <text x="416" y="188">SlateAgentRegistry.validateForSettlement(...)</text>
-            <text x="416" y="206">SlateEscrow  →  pay provider, refund depositor</text>
+            <text x="416" y="188">AgentRegistry.validateForSettlement(...)</text>
+            <text x="416" y="206">Escrow  →  pay provider, refund depositor</text>
           </svg>
           </div>
         </div>

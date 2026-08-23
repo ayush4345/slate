@@ -8,7 +8,7 @@ import { ALL_TOOLS, TOOL_PROVIDERS } from "./providers.js";
 
 function providerInfo(config: ConsumerServerConfig) {
   return {
-    name: "slate-provider",
+    name: "avtar-provider",
     url: config.providerUrl,
   };
 }

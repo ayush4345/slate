@@ -47,8 +47,8 @@ export function createProviderServer(deps: ProviderServerDeps): Express {
 
   app.get("/.well-known/agent-card.json", (_req, res) => {
     res.json({
-      name: "slate-provider",
-      description: "Metered multi-tool provider, settled via Slate ZK payment channels on Base.",
+      name: "avtar-provider",
+      description: "Metered multi-tool provider, settled via avtar.ai ZK payment channels on Base.",
       x402: { open: "/agent/open", requirements: terms },
       tools: TOOL_SPECS,
     });
