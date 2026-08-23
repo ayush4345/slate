@@ -113,11 +113,13 @@ export class AgentSession {
     const rateBlind = randField();
     const channelSecret = randField();
     const consumerPrivateKey = randomBytes(32);
+    const callToken = randomBytes(32).toString("base64url");
 
     const advertised = await RemoteChannel.open({
       providerUrl: this.config.providerUrl,
       channelId,
       escrow,
+      callToken,
       payment: this.config.paymentSignature,
     }).then((channel) => {
       this.#channel = channel;

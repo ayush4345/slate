@@ -14,6 +14,8 @@ export interface RemoteOpenInput {
   providerUrl: string;
   channelId: bigint;
   escrow: bigint;
+  /** Random, per-channel bearer token required for every billable call. */
+  callToken: string;
   /** The authorization the provider's verifier checks. Wrapped in an x402
    *  envelope before it is sent; callers pass the proof, not the header. */
   payment: string;
@@ -57,6 +59,7 @@ export class RemoteChannel implements MeteredServiceChannel<ToolCall, ToolResult
     readonly channelId: bigint,
     readonly rate: bigint,
     readonly escrow: bigint,
+    readonly callToken: string,
     readonly advertised: ProviderTerms,
   ) {}
 
@@ -76,6 +79,7 @@ export class RemoteChannel implements MeteredServiceChannel<ToolCall, ToolResult
       body: JSON.stringify({
         channelId: input.channelId.toString(),
         escrow: input.escrow.toString(),
+        callToken: input.callToken,
         consumerPublicKey: input.consumerPublicKey
           ? { x: input.consumerPublicKey.x.toString(), y: input.consumerPublicKey.y.toString() }
           : { x: "0", y: "0" },
@@ -90,6 +94,7 @@ export class RemoteChannel implements MeteredServiceChannel<ToolCall, ToolResult
       input.channelId,
       parseAdvertisedRate(advertised.rate),
       input.escrow,
+      input.callToken,
       advertised,
     );
   }
@@ -97,7 +102,10 @@ export class RemoteChannel implements MeteredServiceChannel<ToolCall, ToolResult
   async call(req: ToolCall): Promise<CallOutcome<ToolCall, ToolResult>> {
     const res = await fetch(joinUrl(this.providerUrl, `/channels/${this.channelId}/call`), {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        "x-slate-channel-token": this.callToken,
+      },
       body: JSON.stringify({ payload: req }),
     });
     const body = (await res.json().catch(() => ({}))) as {
@@ -127,6 +135,7 @@ export class RemoteChannel implements MeteredServiceChannel<ToolCall, ToolResult
   async close(): Promise<CloseResult> {
     const res = await fetch(joinUrl(this.providerUrl, `/channels/${this.channelId}/finalize`), {
       method: "POST",
+      headers: { "x-slate-channel-token": this.callToken },
     });
     const body = (await res.json().catch(() => ({}))) as { finalUnits?: string };
     const totalUnits = body.finalUnits !== undefined ? BigInt(body.finalUnits) : this.#units;

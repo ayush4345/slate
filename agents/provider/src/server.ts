@@ -61,7 +61,7 @@ export function createProviderServer(deps: ProviderServerDeps): Express {
       return;
     }
 
-    const verified = await verifier.verifyAndSettle(payment, terms);
+    const verified = await verifier.verify(payment, terms);
     if (!verified.ok) {
       res
         .status(402)
@@ -69,8 +69,13 @@ export function createProviderServer(deps: ProviderServerDeps): Express {
       return;
     }
 
-    const body = req.body as { channelId?: string; escrow?: string };
-    if (typeof body.channelId !== "string" || typeof body.escrow !== "string") {
+    const body = req.body as { channelId?: string; escrow?: string; callToken?: string };
+    if (
+      typeof body.channelId !== "string" ||
+      typeof body.escrow !== "string" ||
+      typeof body.callToken !== "string" ||
+      body.callToken.length < 32
+    ) {
       res.status(400).json({ ok: false, error: "invalid open payload" });
       return;
     }
@@ -79,6 +84,7 @@ export function createProviderServer(deps: ProviderServerDeps): Express {
       channelId: BigInt(body.channelId),
       rate,
       escrow: BigInt(body.escrow),
+      callToken: body.callToken,
     });
     res.json({
       ok: true,
@@ -86,7 +92,6 @@ export function createProviderServer(deps: ProviderServerDeps): Express {
       rate: terms.rate,
       payTo: terms.payTo,
       asset: terms.asset,
-      settlementTx: verified.settlementTx,
     });
   });
 
@@ -95,6 +100,11 @@ export function createProviderServer(deps: ProviderServerDeps): Express {
     const meter = registry.get(channelId);
     if (meter === undefined) {
       res.status(404).json({ served: false, reason: "unknown-channel" });
+      return;
+    }
+    const callToken = req.get("x-slate-channel-token") ?? undefined;
+    if (!registry.isAuthorized(channelId, callToken)) {
+      res.status(401).json({ served: false, reason: "unauthorized-channel-call" });
       return;
     }
 
@@ -146,6 +156,11 @@ export function createProviderServer(deps: ProviderServerDeps): Express {
 
   app.post("/channels/:id/finalize", (req, res) => {
     const channelId = String(req.params.id);
+    const callToken = req.get("x-slate-channel-token") ?? undefined;
+    if (!registry.isAuthorized(channelId, callToken)) {
+      res.status(401).json({ ok: false, error: "unauthorized-channel-finalize" });
+      return;
+    }
     const finalUnits = registry.get(channelId)?.cumulativeUnits.toString() ?? "0";
     registry.close(channelId);
     res.json({ ok: true, finalUnits });
