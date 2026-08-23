@@ -16,12 +16,12 @@ function inspect(contract: string): unknown {
   return JSON.parse(raw);
 }
 
-test("escrowAbi matches forge inspect SlateEscrow", () => {
-  assert.deepEqual(escrowAbi, inspect("SlateEscrow"));
+test("escrowAbi matches forge inspect AvtarEscrow", () => {
+  assert.deepEqual(escrowAbi, inspect("AvtarEscrow"));
 });
 
-test("registryAbi matches forge inspect SlateAgentRegistry", () => {
-  assert.deepEqual(registryAbi, inspect("SlateAgentRegistry"));
+test("registryAbi matches forge inspect AvtarAgentRegistry", () => {
+  assert.deepEqual(registryAbi, inspect("AvtarAgentRegistry"));
 });
 
 test("verifierAbi matches forge inspect Groth16Verifier", () => {

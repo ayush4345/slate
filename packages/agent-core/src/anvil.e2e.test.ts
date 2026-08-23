@@ -122,8 +122,8 @@ async function deploy(rpcUrl: string): Promise<Deployed> {
   return {
     token: addressOf("MockUSDC"),
     verifier: addressOf("Groth16Verifier"),
-    registry: addressOf("SlateAgentRegistry"),
-    escrow: addressOf("SlateEscrow"),
+    registry: addressOf("AvtarAgentRegistry"),
+    escrow: addressOf("AvtarEscrow"),
   };
 }
 
@@ -152,9 +152,9 @@ async function deployWithGeneratedVerifier(rpcUrl: string): Promise<Deployed> {
   };
 
   const verifier = create(artifacts.verifierSol + ":Groth16Verifier");
-  const registry = create("src/SlateAgentRegistry.sol:SlateAgentRegistry");
+  const registry = create("src/AvtarAgentRegistry.sol:AvtarAgentRegistry");
   const owner = privateKeyToAccount(DEPLOYER_KEY).address;
-  const escrow = create("src/SlateEscrow.sol:SlateEscrow", [verifier, registry, owner]);
+  const escrow = create("src/AvtarEscrow.sol:AvtarEscrow", [verifier, registry, owner]);
   const token = create("script/DeployLocal.s.sol:MockUSDC");
 
   const wallet = createWalletClient({

@@ -6,8 +6,8 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {SlateEscrow} from "../src/SlateEscrow.sol";
-import {SlateAgentRegistry} from "../src/SlateAgentRegistry.sol";
+import {AvtarEscrow} from "../src/AvtarEscrow.sol";
+import {AvtarAgentRegistry} from "../src/AvtarAgentRegistry.sol";
 import {SignalAddress} from "../src/SignalAddress.sol";
 import {Groth16Verifier} from "../src/Verifier.sol";
 
@@ -46,12 +46,12 @@ contract StubVerifier {
 /// An ERC-20 that calls back into the escrow when it pays out, standing in for
 /// a token with transfer hooks.
 contract ReentrantToken is ERC20 {
-    SlateEscrow escrow;
+    AvtarEscrow escrow;
     bool attacking;
 
     constructor() ERC20("Reentrant", "RE") {}
 
-    function setEscrow(SlateEscrow escrow_) external {
+    function setEscrow(AvtarEscrow escrow_) external {
         escrow = escrow_;
     }
 
@@ -72,9 +72,9 @@ contract ReentrantToken is ERC20 {
 /// Covers the whitelist/deposit/refund/settle surface, with emphasis on the
 /// auth boundaries and the escrow-accounting invariants that protect deposited
 /// funds.
-contract SlateEscrowTest is Test {
-    SlateEscrow escrow;
-    SlateAgentRegistry registry;
+contract AvtarEscrowTest is Test {
+    AvtarEscrow escrow;
+    AvtarAgentRegistry registry;
     StubVerifier verifierContract;
     MockUSDC usdc;
 
@@ -97,11 +97,11 @@ contract SlateEscrowTest is Test {
 
     function setUp() public {
         usdc = new MockUSDC();
-        registry = new SlateAgentRegistry();
+        registry = new AvtarAgentRegistry();
         verifierContract = new StubVerifier();
         verifier = address(verifierContract);
 
-        escrow = new SlateEscrow(verifier, address(registry), owner);
+        escrow = new AvtarEscrow(verifier, address(registry), owner);
         vm.prank(owner);
         escrow.whitelistToken(address(usdc));
         usdc.mint(depositor, 1_000e6);
@@ -167,7 +167,7 @@ contract SlateEscrowTest is Test {
 
     function test_deposit_revertsOnZeroAmount() public {
         vm.prank(depositor);
-        vm.expectRevert(SlateEscrow.InvalidAmount.selector);
+        vm.expectRevert(AvtarEscrow.InvalidAmount.selector);
         escrow.deposit(address(usdc), 0);
     }
 
@@ -176,14 +176,14 @@ contract SlateEscrowTest is Test {
         other.mint(depositor, 100e6);
         vm.startPrank(depositor);
         other.approve(address(escrow), 100e6);
-        vm.expectRevert(SlateEscrow.TokenNotWhitelisted.selector);
+        vm.expectRevert(AvtarEscrow.TokenNotWhitelisted.selector);
         escrow.deposit(address(other), 100e6);
         vm.stopPrank();
     }
 
     function test_refund_revertsOnEmptyBalance() public {
         vm.prank(depositor);
-        vm.expectRevert(SlateEscrow.NoBalanceToRefund.selector);
+        vm.expectRevert(AvtarEscrow.NoBalanceToRefund.selector);
         escrow.refund(address(usdc));
     }
 
@@ -251,7 +251,7 @@ contract SlateEscrowTest is Test {
     function test_settle_revertsOnInvalidProof() public {
         _deposit(1_000);
         verifierContract.setAccepts(false);
-        vm.expectRevert(SlateEscrow.InvalidProof.selector);
+        vm.expectRevert(AvtarEscrow.InvalidProof.selector);
         escrow.settle(emptyA, emptyB, emptyC, _signals(1_000, 250, NULLIFIER));
     }
 
@@ -260,7 +260,7 @@ contract SlateEscrowTest is Test {
     function test_settle_revertsOnReplayedNullifier() public {
         _deposit(2_000);
         escrow.settle(emptyA, emptyB, emptyC, _signals(1_000, 250, NULLIFIER));
-        vm.expectRevert(SlateEscrow.NullifierAlreadySpent.selector);
+        vm.expectRevert(AvtarEscrow.NullifierAlreadySpent.selector);
         escrow.settle(emptyA, emptyB, emptyC, _signals(1_000, 250, NULLIFIER));
     }
 
@@ -269,19 +269,19 @@ contract SlateEscrowTest is Test {
     function test_settle_secondSettlementNeedsItsOwnEscrow() public {
         _deposit(1_000);
         escrow.settle(emptyA, emptyB, emptyC, _signals(1_000, 250, NULLIFIER));
-        vm.expectRevert(SlateEscrow.InsufficientBalance.selector);
+        vm.expectRevert(AvtarEscrow.InsufficientBalance.selector);
         escrow.settle(emptyA, emptyB, emptyC, _signals(1_000, 250, NULLIFIER + 1));
     }
 
     function test_settle_revertsWhenSettlementExceedsEscrow() public {
         _deposit(1_000);
-        vm.expectRevert(SlateEscrow.SettlementExceedsEscrow.selector);
+        vm.expectRevert(AvtarEscrow.SettlementExceedsEscrow.selector);
         escrow.settle(emptyA, emptyB, emptyC, _signals(1_000, 1_001, NULLIFIER));
     }
 
     function test_settle_revertsWhenEscrowUnderfunded() public {
         _deposit(500);
-        vm.expectRevert(SlateEscrow.InsufficientBalance.selector);
+        vm.expectRevert(AvtarEscrow.InsufficientBalance.selector);
         escrow.settle(emptyA, emptyB, emptyC, _signals(1_000, 250, NULLIFIER));
     }
 
@@ -291,7 +291,7 @@ contract SlateEscrowTest is Test {
         _deposit(1_000);
         vm.prank(provider);
         registry.closeChannel(CHANNEL_ID);
-        vm.expectRevert(SlateAgentRegistry.ChannelNotOpen.selector);
+        vm.expectRevert(AvtarAgentRegistry.ChannelNotOpen.selector);
         escrow.settle(emptyA, emptyB, emptyC, _signals(1_000, 250, NULLIFIER));
     }
 
@@ -299,7 +299,7 @@ contract SlateEscrowTest is Test {
         _deposit(1_000);
         uint256[13] memory signals = _signals(1_000, 250, NULLIFIER);
         signals[0] = CHANNEL_ID + 1;
-        vm.expectRevert(SlateAgentRegistry.ChannelNotFound.selector);
+        vm.expectRevert(AvtarAgentRegistry.ChannelNotFound.selector);
         escrow.settle(emptyA, emptyB, emptyC, signals);
     }
 
@@ -338,7 +338,7 @@ contract SlateEscrowTest is Test {
     /// here instead of on a live network. A junk proof must be rejected, not
     /// accepted and not swallowed.
     function test_settle_againstGeneratedVerifier() public {
-        SlateEscrow real = new SlateEscrow(address(new Groth16Verifier()), address(registry), owner);
+        AvtarEscrow real = new AvtarEscrow(address(new Groth16Verifier()), address(registry), owner);
         vm.prank(owner);
         real.whitelistToken(address(usdc));
 
@@ -347,7 +347,7 @@ contract SlateEscrowTest is Test {
         real.deposit(address(usdc), 1_000);
         vm.stopPrank();
 
-        vm.expectRevert(SlateEscrow.InvalidProof.selector);
+        vm.expectRevert(AvtarEscrow.InvalidProof.selector);
         real.settle(emptyA, emptyB, emptyC, _signals(1_000, 250, NULLIFIER));
     }
 

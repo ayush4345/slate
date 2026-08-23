@@ -28,8 +28,8 @@ Inside the Foundry project:
 | Path | What |
 |---|---|
 | `src/Verifier.sol` | **Generated** — `snarkjs zkey export solidityverifier`. Do not hand-edit. |
-| `src/SlateEscrow.sol` | Escrow: deposit → verify proof → check nullifier → pay out. |
-| `src/SlateAgentRegistry.sol` | Pinned channel terms, checked at settlement. |
+| `src/AvtarEscrow.sol` | Escrow: deposit → verify proof → check nullifier → pay out. |
+| `src/AvtarAgentRegistry.sol` | Pinned channel terms, checked at settlement. |
 | `src/SignalAddress.sol` | Encodes an EVM address into the circuit's hi/lo field pair. |
 | `sdk/` | TypeScript client, Foundry ABIs, and the read path. |
 
@@ -39,22 +39,19 @@ Chain id `84532`. Deployed with `script/Deploy.s.sol`.
 
 | Contract | Address |
 |---|---|
-| SlateEscrow | [`0x58216D0178C18014BdD60Ae1B29068e53CBe25ad`](https://sepolia.basescan.org/address/0x58216D0178C18014BdD60Ae1B29068e53CBe25ad) |
-| SlateAgentRegistry | [`0x7518B46ADA50ECb7A59F55825526C668F4e3EBfe`](https://sepolia.basescan.org/address/0x7518B46ADA50ECb7A59F55825526C668F4e3EBfe) |
-| Groth16Verifier | [`0x09eAa12EEf85a4Fcb1715E9E85d388836c6b1111`](https://sepolia.basescan.org/address/0x09eAa12EEf85a4Fcb1715E9E85d388836c6b1111) |
+| AvtarEscrow | [`0xB7e6B6a9eE79d8008e460747CCe51cf5158e34Ca`](https://sepolia.basescan.org/address/0xB7e6B6a9eE79d8008e460747CCe51cf5158e34Ca) |
+| AvtarAgentRegistry | [`0x82bb7Ba507aE1df6288DDDBE5047c917e57AD436`](https://sepolia.basescan.org/address/0x82bb7Ba507aE1df6288DDDBE5047c917e57AD436) |
+| Groth16Verifier | [`0xC279E5f9D81c058286FCf19861ddDd931c5C55B3`](https://sepolia.basescan.org/address/0xC279E5f9D81c058286FCf19861ddDd931c5C55B3) |
 | USDC (whitelisted) | [`0x036CbD53842c5426634e7929541eC2318f3dCF7e`](https://sepolia.basescan.org/address/0x036CbD53842c5426634e7929541eC2318f3dCF7e) |
 
 ```
 BASE_CHAIN_ID=84532
 BASE_RPC_URL=https://base-sepolia-rpc.publicnode.com
-SLATE_ESCROW_ADDRESS=0x58216D0178C18014BdD60Ae1B29068e53CBe25ad
-SLATE_REGISTRY_ADDRESS=0x7518B46ADA50ECb7A59F55825526C668F4e3EBfe
+SLATE_ESCROW_ADDRESS=0xB7e6B6a9eE79d8008e460747CCe51cf5158e34Ca
+SLATE_REGISTRY_ADDRESS=0x82bb7Ba507aE1df6288DDDBE5047c917e57AD436
 ```
 
 `SETTLEMENT_TOKEN` is omitted on purpose: it defaults to the USDC above.
-
-A settlement was verified against this deployment in
-[`0x93b0f7e8…55c5fc`](https://sepolia.basescan.org/tx/0x93b0f7e855298950766bfe2d721b8efce2326ff456b4f5403dff8bb04455c5fc).
 
 **The verifier and the proving key are a pair.** This escrow takes its verifier
 at construction and never lets it change, so a proof built with a different
@@ -172,8 +169,8 @@ Settling on Base Sepolia needs a funded key and the deployed addresses:
 EVM_PRIVATE_KEY=0x…        # funds escrow, submits settlement, pays gas
 BASE_CHAIN_ID=84532
 BASE_RPC_URL=https://base-sepolia-rpc.publicnode.com
-SLATE_ESCROW_ADDRESS=0x58216D0178C18014BdD60Ae1B29068e53CBe25ad
-SLATE_REGISTRY_ADDRESS=0x7518B46ADA50ECb7A59F55825526C668F4e3EBfe
+SLATE_ESCROW_ADDRESS=0xB7e6B6a9eE79d8008e460747CCe51cf5158e34Ca
+SLATE_REGISTRY_ADDRESS=0x82bb7Ba507aE1df6288DDDBE5047c917e57AD436
 X402_PAY_TO=0x…
 ```
 

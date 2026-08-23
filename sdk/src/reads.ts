@@ -22,7 +22,7 @@ export interface ReadsConfig {
   registry: Address;
 }
 
-/** The record `SlateAgentRegistry.getChannel` returns. */
+/** The record `AvtarAgentRegistry.getChannel` returns. */
 export interface Channel {
   rateCommitment: bigint;
   consumerPubkeyX: bigint;

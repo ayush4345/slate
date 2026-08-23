@@ -2,11 +2,11 @@
 pragma solidity ^0.8.28;
 
 import {Test} from "forge-std/Test.sol";
-import {SlateAgentRegistry} from "../src/SlateAgentRegistry.sol";
+import {AvtarAgentRegistry} from "../src/AvtarAgentRegistry.sol";
 import {SignalAddress} from "../src/SignalAddress.sol";
 
-contract SlateAgentRegistryTest is Test {
-    SlateAgentRegistry registry;
+contract AvtarAgentRegistryTest is Test {
+    AvtarAgentRegistry registry;
 
     address depositor = makeAddr("depositor");
     address provider = makeAddr("provider");
@@ -19,7 +19,7 @@ contract SlateAgentRegistryTest is Test {
     uint256 constant PUBKEY_Y = 222;
 
     function setUp() public {
-        registry = new SlateAgentRegistry();
+        registry = new AvtarAgentRegistry();
         vm.prank(depositor);
         registry.registerChannel(CHANNEL_ID, RATE_COMMITMENT, PUBKEY_X, PUBKEY_Y, provider, token);
     }
@@ -27,7 +27,7 @@ contract SlateAgentRegistryTest is Test {
     // --- registration -------------------------------------------------------
 
     function test_registerChannel_recordsTerms() public view {
-        SlateAgentRegistry.Channel memory channel = registry.getChannel(CHANNEL_ID);
+        AvtarAgentRegistry.Channel memory channel = registry.getChannel(CHANNEL_ID);
         assertEq(channel.rateCommitment, RATE_COMMITMENT);
         assertEq(channel.consumerPubkeyX, PUBKEY_X);
         assertEq(channel.consumerPubkeyY, PUBKEY_Y);
@@ -49,15 +49,15 @@ contract SlateAgentRegistryTest is Test {
     /// of terms claim proofs written for the first.
     function test_registerChannel_revertsOnDuplicateId() public {
         vm.prank(depositor);
-        vm.expectRevert(SlateAgentRegistry.ChannelAlreadyRegistered.selector);
+        vm.expectRevert(AvtarAgentRegistry.ChannelAlreadyRegistered.selector);
         registry.registerChannel(CHANNEL_ID, RATE_COMMITMENT, PUBKEY_X, PUBKEY_Y, provider, token);
     }
 
     function test_registerChannel_revertsOnZeroProviderOrToken() public {
         vm.startPrank(depositor);
-        vm.expectRevert(SlateAgentRegistry.ZeroAddress.selector);
+        vm.expectRevert(AvtarAgentRegistry.ZeroAddress.selector);
         registry.registerChannel(1, RATE_COMMITMENT, PUBKEY_X, PUBKEY_Y, address(0), token);
-        vm.expectRevert(SlateAgentRegistry.ZeroAddress.selector);
+        vm.expectRevert(AvtarAgentRegistry.ZeroAddress.selector);
         registry.registerChannel(2, RATE_COMMITMENT, PUBKEY_X, PUBKEY_Y, provider, address(0));
         vm.stopPrank();
     }
@@ -68,7 +68,7 @@ contract SlateAgentRegistryTest is Test {
     }
 
     function test_getChannel_revertsWhenMissing() public {
-        vm.expectRevert(SlateAgentRegistry.ChannelNotFound.selector);
+        vm.expectRevert(AvtarAgentRegistry.ChannelNotFound.selector);
         registry.getChannel(CHANNEL_ID + 1);
     }
 
@@ -85,14 +85,14 @@ contract SlateAgentRegistryTest is Test {
     function test_validateForSettlement_revertsOnChannelIdMismatch() public {
         uint256[13] memory signals = _signals();
         signals[0] = CHANNEL_ID + 1;
-        vm.expectRevert(SlateAgentRegistry.ChannelIdMismatch.selector);
+        vm.expectRevert(AvtarAgentRegistry.ChannelIdMismatch.selector);
         registry.validateForSettlement(CHANNEL_ID, signals);
     }
 
     function test_validateForSettlement_revertsOnUnknownChannel() public {
         uint256[13] memory signals = _signals();
         signals[0] = 7;
-        vm.expectRevert(SlateAgentRegistry.ChannelNotFound.selector);
+        vm.expectRevert(AvtarAgentRegistry.ChannelNotFound.selector);
         registry.validateForSettlement(7, signals);
     }
 
@@ -101,7 +101,7 @@ contract SlateAgentRegistryTest is Test {
     function test_validateForSettlement_revertsOnRateCommitmentMismatch() public {
         uint256[13] memory signals = _signals();
         signals[1] = RATE_COMMITMENT + 1;
-        vm.expectRevert(SlateAgentRegistry.RateCommitmentMismatch.selector);
+        vm.expectRevert(AvtarAgentRegistry.RateCommitmentMismatch.selector);
         registry.validateForSettlement(CHANNEL_ID, signals);
     }
 
@@ -110,19 +110,19 @@ contract SlateAgentRegistryTest is Test {
     function test_validateForSettlement_revertsOnPubkeyMismatch() public {
         uint256[13] memory signals = _signals();
         signals[5] = PUBKEY_X + 1;
-        vm.expectRevert(SlateAgentRegistry.ConsumerPubkeyMismatch.selector);
+        vm.expectRevert(AvtarAgentRegistry.ConsumerPubkeyMismatch.selector);
         registry.validateForSettlement(CHANNEL_ID, signals);
 
         signals = _signals();
         signals[6] = PUBKEY_Y + 1;
-        vm.expectRevert(SlateAgentRegistry.ConsumerPubkeyMismatch.selector);
+        vm.expectRevert(AvtarAgentRegistry.ConsumerPubkeyMismatch.selector);
         registry.validateForSettlement(CHANNEL_ID, signals);
     }
 
     function test_validateForSettlement_revertsOnDepositorMismatch() public {
         uint256[13] memory signals = _signals();
         _writeAddress(signals, 7, 8, stranger);
-        vm.expectRevert(SlateAgentRegistry.DepositorMismatch.selector);
+        vm.expectRevert(AvtarAgentRegistry.DepositorMismatch.selector);
         registry.validateForSettlement(CHANNEL_ID, signals);
     }
 
@@ -130,14 +130,14 @@ contract SlateAgentRegistryTest is Test {
     function test_validateForSettlement_revertsOnProviderMismatch() public {
         uint256[13] memory signals = _signals();
         _writeAddress(signals, 9, 10, stranger);
-        vm.expectRevert(SlateAgentRegistry.ProviderMismatch.selector);
+        vm.expectRevert(AvtarAgentRegistry.ProviderMismatch.selector);
         registry.validateForSettlement(CHANNEL_ID, signals);
     }
 
     function test_validateForSettlement_revertsOnTokenMismatch() public {
         uint256[13] memory signals = _signals();
         _writeAddress(signals, 11, 12, stranger);
-        vm.expectRevert(SlateAgentRegistry.TokenMismatch.selector);
+        vm.expectRevert(AvtarAgentRegistry.TokenMismatch.selector);
         registry.validateForSettlement(CHANNEL_ID, signals);
     }
 
@@ -145,7 +145,7 @@ contract SlateAgentRegistryTest is Test {
     function test_validateForSettlement_revertsOnPartialAddressMatch() public {
         uint256[13] memory signals = _signals();
         signals[8] = signals[8] + 1;
-        vm.expectRevert(SlateAgentRegistry.DepositorMismatch.selector);
+        vm.expectRevert(AvtarAgentRegistry.DepositorMismatch.selector);
         registry.validateForSettlement(CHANNEL_ID, signals);
     }
 
@@ -165,14 +165,14 @@ contract SlateAgentRegistryTest is Test {
 
     function test_closeChannel_revertsForStranger() public {
         vm.prank(stranger);
-        vm.expectRevert(SlateAgentRegistry.UnauthorizedCloser.selector);
+        vm.expectRevert(AvtarAgentRegistry.UnauthorizedCloser.selector);
         registry.closeChannel(CHANNEL_ID);
     }
 
     function test_closeChannel_revertsWhenAlreadyClosed() public {
         vm.startPrank(depositor);
         registry.closeChannel(CHANNEL_ID);
-        vm.expectRevert(SlateAgentRegistry.ChannelAlreadyClosed.selector);
+        vm.expectRevert(AvtarAgentRegistry.ChannelAlreadyClosed.selector);
         registry.closeChannel(CHANNEL_ID);
         vm.stopPrank();
     }
@@ -182,7 +182,7 @@ contract SlateAgentRegistryTest is Test {
     function test_validateForSettlement_revertsWhenClosed() public {
         vm.prank(depositor);
         registry.closeChannel(CHANNEL_ID);
-        vm.expectRevert(SlateAgentRegistry.ChannelNotOpen.selector);
+        vm.expectRevert(AvtarAgentRegistry.ChannelNotOpen.selector);
         registry.validateForSettlement(CHANNEL_ID, _signals());
     }
 

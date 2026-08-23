@@ -107,8 +107,8 @@ async function deploy(rpcUrl: string): Promise<Deployed> {
   return {
     token: addressOf("MockUSDC"),
     verifier: addressOf("Groth16Verifier"),
-    registry: addressOf("SlateAgentRegistry"),
-    escrow: addressOf("SlateEscrow"),
+    registry: addressOf("AvtarAgentRegistry"),
+    escrow: addressOf("AvtarEscrow"),
   };
 }
 
