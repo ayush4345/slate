@@ -89,14 +89,26 @@ test("MockPaymentVerifier checks the network it was offered", async () => {
   const pay = (network: "base" | "base-sepolia") =>
     encodePayment({ x402Version: 1, scheme: "exact", network, payload: { authorization: "sig" } });
 
-  assert.equal(await verifier.verify(pay("base-sepolia"), terms), true);
-  assert.equal(await verifier.verify(pay("base"), terms), false);
+  const accepted = await verifier.verify(pay("base-sepolia"), terms);
+  assert.deepEqual(accepted, { ok: true });
+
+  const wrongChain = await verifier.verify(pay("base"), terms);
+  assert.equal(wrongChain.ok, false);
+  assert.match((wrongChain as { reason: string }).reason, /payment is for base, terms are base-sepolia/);
 });
 
-test("FacilitatorPaymentVerifier posts the payment and reads isValid", async () => {
-  let seen: { url: string; body: Record<string, unknown> } | undefined;
+/// A resource server answers 402 for a bad header. Throwing would turn a
+/// declined payment into a 500.
+test("a malformed header is a declined payment, not a thrown error", async () => {
+  const result = await new MockPaymentVerifier().verify("not-base64", buildTerms(config));
+  assert.equal(result.ok, false);
+  assert.match((result as { reason: string }).reason, /base64/);
+});
+
+test("FacilitatorPaymentVerifier verifies without settling the metered channel", async () => {
+  const seen: Array<{ url: string; body: Record<string, unknown> }> = [];
   const fetchImpl = (async (url: string, init: RequestInit) => {
-    seen = { url, body: JSON.parse(init.body as string) };
+    seen.push({ url, body: JSON.parse(init.body as string) });
     return new Response(JSON.stringify({ isValid: true }), { status: 200 });
   }) as unknown as typeof fetch;
 
@@ -108,12 +120,19 @@ test("FacilitatorPaymentVerifier posts the payment and reads isValid", async () 
   });
   const verifier = new FacilitatorPaymentVerifier("https://facilitator.example/", fetchImpl);
 
-  assert.equal(await verifier.verify(header, buildTerms(config)), true);
-  assert.equal(seen!.url, "https://facilitator.example/verify", "no doubled slash");
-  assert.equal((seen!.body.paymentRequirements as { asset: string }).asset, USDC);
+  const result = await verifier.verify(header, buildTerms(config));
+  assert.deepEqual(result, { ok: true });
+  assert.deepEqual(
+    seen.map((s) => s.url),
+    ["https://facilitator.example/verify"],
+    "a metered channel is settled only through Slate escrow",
+  );
+  assert.equal((seen[0]!.body.paymentRequirements as { asset: string }).asset, USDC);
 });
 
-test("a facilitator that errors is a failure, not a silent decline", async () => {
+/// The reason has to name what went wrong. A bare "declined" would look
+/// identical to a payment the facilitator actually rejected.
+test("a facilitator that errors declines with a reason naming the status", async () => {
   const fetchImpl = (async () => new Response("nope", { status: 500 })) as unknown as typeof fetch;
   const verifier = new FacilitatorPaymentVerifier("https://facilitator.example", fetchImpl);
   const header = encodePayment({
@@ -122,7 +141,9 @@ test("a facilitator that errors is a failure, not a silent decline", async () =>
     network: "base-sepolia",
     payload: { authorization: "sig" },
   });
-  await assert.rejects(() => verifier.verify(header, buildTerms(config)), /answered 500/);
+  const result = await verifier.verify(header, buildTerms(config));
+  assert.equal(result.ok, false);
+  assert.match((result as { reason: string }).reason, /verify-failed-500/);
 });
 
 test("fetchWithPayment retries a 402 exactly once, with the header", async () => {

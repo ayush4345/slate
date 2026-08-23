@@ -2,3 +2,4 @@ packages:
   - "packages/*"
   - "agents/provider"
   - "agents/consumer"
+  - "web"

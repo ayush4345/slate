@@ -17,7 +17,9 @@ function asSignals13(signals: PublicSignals): Signals13 {
  * inspect a channel without sending a transaction.
  */
 export interface ReadsConfig {
-  publicClient: PublicClient;
+  /** Only the read is needed. Taking the whole `PublicClient` would reject a
+   *  chain-typed client, since viem specialises transaction types per chain. */
+  publicClient: Pick<PublicClient, "readContract">;
   escrow: Address;
   registry: Address;
 }

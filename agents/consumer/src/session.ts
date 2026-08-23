@@ -84,6 +84,15 @@ export class AgentSession {
     return out;
   }
 
+  /** The channel this session is metering against, once it has opened one. */
+  getChannel(): { channelId?: string; depositor?: string; token?: string } {
+    const out: { channelId?: string; depositor?: string; token?: string } = {};
+    if (this.#terms !== undefined) out.channelId = this.#terms.channelId.toString();
+    if (this.#depositor !== undefined) out.depositor = this.#depositor;
+    if (this.#token !== undefined) out.token = this.#token;
+    return out;
+  }
+
   getPaymentSummary(): TurnPayment {
     return {
       turnCalls: 0,
@@ -104,11 +113,13 @@ export class AgentSession {
     const rateBlind = randField();
     const channelSecret = randField();
     const consumerPrivateKey = randomBytes(32);
+    const callToken = randomBytes(32).toString("base64url");
 
     const advertised = await RemoteChannel.open({
       providerUrl: this.config.providerUrl,
       channelId,
       escrow,
+      callToken,
       payment: this.config.paymentSignature,
     }).then((channel) => {
       this.#channel = channel;
