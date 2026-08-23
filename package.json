@@ -1,0 +1,27 @@
+{
+  "name": "slate-base",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -b && pnpm --filter @slate-base/agent-provider build && pnpm --filter @slate-base/agent-consumer build && pnpm --filter @slate-base/web build",
+    "clean": "tsc -b --clean",
+    "test": "tsc -b && pnpm -r --no-bail test",
+    "test:e2e": "pnpm --filter @slate-base/agent-core test:e2e",
+    "generate:abi": "pnpm --filter @slate-base/onchain-setup generate:abi",
+    "demo": "pnpm --filter @slate-base/agent-consumer demo",
+    "serve:provider": "pnpm --filter @slate-base/agent-provider serve",
+    "serve:consumer": "pnpm --filter @slate-base/agent-consumer serve",
+    "serve:web": "pnpm --filter @slate-base/web dev"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.9.0",
+      "onFail": "download"
+    }
+  }
+}

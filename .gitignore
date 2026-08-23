@@ -6,3 +6,7 @@ broadcast/
 node_modules/
 dist/
 *.tsbuildinfo
+.cache/
+.next/
+.env.local
+.env.*.local
