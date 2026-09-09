@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc -b && pnpm --filter @avtar/agent-provider build && pnpm --filter @avtar/agent-consumer build && pnpm --filter @avtar/web build",
+    "build:web:vercel": "pnpm --filter @avtar/proving-setup build && pnpm --filter @avtar/onchain-setup build && pnpm --filter @avtar/agent-core build && pnpm --filter @avtar/agent-provider build && pnpm --filter @avtar/agent-consumer build && pnpm --filter @avtar/web build",
     "clean": "tsc -b --clean",
     "test": "tsc -b && pnpm -r --no-bail test",
     "test:e2e": "pnpm --filter @avtar/agent-core test:e2e",

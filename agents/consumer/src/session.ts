@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import {
   MockChainClient,
+  ServiceChannel,
   type MeteredServiceChannel,
   parseUnits,
   pinChannelTerms,
@@ -13,6 +14,7 @@ import {
   type ProviderTerms,
   type ToolCall,
   type ToolResult,
+  type ToolboxService,
 } from "@avtar/agent-core";
 import { TOOL_SPECS } from "@avtar/agent-provider";
 import { ServiceAgent } from "./agent.js";
@@ -31,6 +33,8 @@ type ToolStats = { sessionCalls: number; sessionBillable: bigint };
 export interface AgentSessionDependencies {
   channel?: MeteredServiceChannel<ToolCall, ToolResult>;
   brain?: AgentBrain;
+  /** In-process provider toolbox — skips HTTP x402 and meters locally. */
+  toolbox?: ToolboxService;
 }
 
 export interface ChatResult extends AgentRunResult {
@@ -55,11 +59,10 @@ export interface SettleOutcome {
 }
 
 /**
- * One metered session against a remote provider.
+ * One metered session against a provider.
  *
- * Discovers the provider's 402 terms, opens a channel (and funds escrow
- * on Base when `EVM_PRIVATE_KEY` is set), serves many chat turns, and
- * settles once with a Groth16 proof.
+ * Opens a channel (remote HTTP or in-process toolbox), serves chat turns,
+ * and settles once. On Base when `EVM_PRIVATE_KEY` is set; otherwise mock.
  */
 export class AgentSession {
   #channel: MeteredServiceChannel<ToolCall, ToolResult> | undefined;
@@ -95,13 +98,10 @@ export class AgentSession {
     return out;
   }
 
-  /** The channel this session is metering against, once it has opened one. */
   getChannel(): { channelId?: string; depositor?: string; token?: string; escrow?: string } {
     const out: { channelId?: string; depositor?: string; token?: string; escrow?: string } = {};
     if (this.#terms !== undefined) {
       out.channelId = this.#terms.channelId.toString();
-      // Per-channel escrow lives here and in the proof, never in the escrow
-      // contract, which pools balances per depositor.
       out.escrow = this.#terms.escrow.toString();
     }
     if (this.#depositor !== undefined) out.depositor = this.#depositor;
@@ -123,12 +123,12 @@ export class AgentSession {
   async initialize(): Promise<void> {
     if (this.dependencies.channel !== undefined) {
       this.#channel = this.dependencies.channel;
-      this.#sessionBillable = 0n;
-      this.#sessionCalls = 0;
-      this.#byTool.clear();
+      this.#resetMeter();
       this.#ready = true;
       return;
     }
+
+    this.#resetMeter();
 
     const escrow = parseUnits(this.config.escrow);
     const real = realChainFromEnv();
@@ -138,36 +138,71 @@ export class AgentSession {
     const rateBlind = randField();
     const channelSecret = randField();
     const consumerPrivateKey = randomBytes(32);
-    const callToken = randomBytes(32).toString("base64url");
 
-    const advertised = await RemoteChannel.open({
-      providerUrl: this.config.providerUrl,
-      channelId,
-      escrow,
-      callToken,
-      payment: this.config.paymentSignature,
-    }).then((channel) => {
-      this.#channel = channel;
-      return channel.advertised;
-    });
+    let advertised: ProviderTerms;
+    let rate: bigint;
 
-    const rate = parseUnits(advertised.rate);
-    const terms: ChannelTerms = {
-      channelId,
-      rate,
-      rateBlind,
-      escrow,
-      channelSecret,
-      consumerPrivateKey,
-    };
+    if (this.dependencies.toolbox !== undefined) {
+      rate = parseUnits(this.config.rate);
+      const payTo =
+        (process.env.X402_PAY_TO as Address | undefined) ??
+        (process.env.PROVIDER_ADDRESS as Address | undefined) ??
+        real?.provider;
+      if (payTo === undefined) {
+        throw new Error("X402_PAY_TO or PROVIDER_ADDRESS is required for embedded agent mode");
+      }
+      const asset =
+        (process.env.X402_ASSET as Address | undefined) ??
+        (process.env.SETTLEMENT_TOKEN as Address | undefined) ??
+        real?.token ??
+        payTo;
+      advertised = {
+        rate: this.config.rate,
+        payTo,
+        asset,
+        network: process.env.X402_NETWORK ?? "base-sepolia",
+      };
+      const terms: ChannelTerms = {
+        channelId,
+        rate,
+        rateBlind,
+        escrow,
+        channelSecret,
+        consumerPrivateKey,
+      };
+      this.#channel = new ServiceChannel(terms, this.dependencies.toolbox);
+      this.#terms = terms;
+    } else {
+      const callToken = randomBytes(32).toString("base64url");
+      advertised = await RemoteChannel.open({
+        providerUrl: this.config.providerUrl,
+        channelId,
+        escrow,
+        callToken,
+        payment: this.config.paymentSignature,
+      }).then((channel) => {
+        this.#channel = channel;
+        return channel.advertised;
+      });
+      rate = parseUnits(advertised.rate);
+      this.#terms = {
+        channelId,
+        rate,
+        rateBlind,
+        escrow,
+        channelSecret,
+        consumerPrivateKey,
+      };
+    }
 
+    const terms = this.#terms!;
     const depositor = real?.depositor ?? ("0x0000000000000000000000000000000000000001" as Address);
     const provider = (advertised.payTo as Address | undefined) ?? real?.provider ?? depositor;
     const token = (advertised.asset as Address | undefined) ?? real?.token ?? depositor;
 
     if (real) {
       const pinned = await pinChannelTerms({
-        channelId,
+        channelId: terms.channelId,
         channelSecret,
         rate,
         rateBlind,
@@ -178,7 +213,7 @@ export class AgentSession {
         consumerPrivateKey,
       });
       await chain.openChannel({
-        channelId,
+        channelId: terms.channelId,
         rateCommitment: pinned.rateCommitment,
         consumerPublicKey: pinned.consumerPublicKey,
         provider,
@@ -187,7 +222,7 @@ export class AgentSession {
       });
     } else {
       await chain.openChannel({
-        channelId,
+        channelId: terms.channelId,
         rateCommitment: randField(),
         consumerPublicKey: { x: randField(), y: randField() },
         provider,
@@ -197,14 +232,10 @@ export class AgentSession {
     }
 
     this.#chain = chain;
-    this.#terms = terms;
     this.#advertised = advertised;
     this.#depositor = depositor;
     this.#provider = provider;
     this.#token = token;
-    this.#sessionBillable = 0n;
-    this.#sessionCalls = 0;
-    this.#byTool.clear();
     this.#ready = true;
   }
 
@@ -238,8 +269,10 @@ export class AgentSession {
       }
 
       const turnCalls = served.length;
-      const turnBillable = [...turnStats.values()]
-        .reduce((total, stats) => total + stats.sessionBillable, 0n);
+      const turnBillable = [...turnStats.values()].reduce(
+        (total, stats) => total + stats.sessionBillable,
+        0n,
+      );
       this.#sessionBillable += turnBillable;
       this.#sessionCalls += turnCalls;
 
@@ -285,8 +318,11 @@ export class AgentSession {
 
     const steps: SettleStep[] = [];
     try {
-      const real = this.#depositor !== undefined && this.#provider !== undefined && this.#token !== undefined
-        && realChainFromEnv() !== null;
+      const real =
+        this.#depositor !== undefined &&
+        this.#provider !== undefined &&
+        this.#token !== undefined &&
+        realChainFromEnv() !== null;
 
       if (real && this.#depositor && this.#provider && this.#token) {
         const { settlement } = await proveSettlement({
@@ -355,8 +391,15 @@ export class AgentSession {
   }
 
   async newSession(): Promise<void> {
+    this.#resetMeter();
     if (this.#ready) this.#teardown();
     await this.initialize();
+  }
+
+  #resetMeter(): void {
+    this.#sessionBillable = 0n;
+    this.#sessionCalls = 0;
+    this.#byTool.clear();
   }
 
   #teardown(): void {
@@ -365,6 +408,10 @@ export class AgentSession {
     this.#terms = undefined;
     this.#chain = undefined;
     this.#advertised = undefined;
+    this.#depositor = undefined;
+    this.#provider = undefined;
+    this.#token = undefined;
+    this.#resetMeter();
   }
 
   async shutdown(): Promise<void> {

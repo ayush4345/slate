@@ -8,9 +8,12 @@
     "start": "next start"
   },
   "dependencies": {
+    "@avtar/agent-consumer": "workspace:*",
     "@avtar/agent-core": "workspace:*",
+    "@avtar/agent-provider": "workspace:*",
     "@avtar/onchain-setup": "workspace:*",
     "next": "^15.0.0",
+    "openai": "^4.57.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "viem": "^2.39.4"
