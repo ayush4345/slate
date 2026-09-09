@@ -10,3 +10,4 @@ dist/
 .next/
 .env.local
 .env.*.local
+.vercel

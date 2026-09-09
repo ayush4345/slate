@@ -3,3 +3,7 @@ packages:
   - "agents/provider"
   - "agents/consumer"
   - "web"
+
+allowBuilds:
+  esbuild: true
+  sharp: true
